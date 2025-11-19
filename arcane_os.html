@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>A.R.C.A.N.E. V3.1 | Systems Online</title>
+    <title>A.R.C.A.N.E. V4 | The Rabbit Hole</title>
     <style>
         :root {
             --primary: #00ff41;
             --dim: #003b00;
             --alert: #ff3333;
+            --gold: #ffd700;
             --bg: #000800;
             --glass: rgba(0, 10, 0, 0.9);
             --font: 'Consolas', 'Monaco', monospace;
@@ -19,6 +20,7 @@
             margin: 0; overflow: hidden; background: var(--bg);
             font-family: var(--font); color: var(--primary);
             height: 100vh; width: 100vw;
+            transition: background 1s, color 1s;
         }
 
         canvas { position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.2; }
@@ -41,7 +43,7 @@
 
         .panel {
             background: var(--glass); border: 1px solid var(--primary);
-            padding: 15px; flex: 1; position: relative;
+            padding: 15px; flex: 1; position: relative; transition: border 0.5s;
         }
 
         .header {
@@ -72,8 +74,9 @@
         .dir { color: #55ffff; font-weight: bold; }
         .exe { color: #ff5555; font-weight: bold; }
         .txt { color: #ffffff; }
-        .success { color: #00ff41; }
-        .error { color: #ff3333; }
+        .success { color: var(--primary); }
+        .error { color: var(--alert); }
+        .gold { color: var(--gold); font-weight: bold; text-shadow: 0 0 10px var(--gold); }
         
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: var(--dim); border: 1px solid var(--primary); }
@@ -96,32 +99,32 @@
     <div id="ui-layer">
         <div id="terminal-win" class="window">
             <div class="header">
-                <span>TERMINAL_UPLINK_V3.1</span>
-                <span>[SECURE]</span>
+                <span id="term-title">TERMINAL_UPLINK_V4</span>
+                <span id="sec-level">[LEVEL 1 ACCESS]</span>
             </div>
             <div id="output">
-                <div>A.R.C.A.N.E. OS [Version 3.1.4 (Patched)]</div>
-                <div>System Integrity: CRITICAL</div>
-                <div>Core Access: LOCKED</div>
+                <div>A.R.C.A.N.E. OS [Version 4.0.1]</div>
+                <div>System Integrity: COMPROMISED</div>
                 <br>
-                <div class="success">Welcome, Administrator. Type 'help' for commands.</div>
+                <div class="success">Welcome, User.</div>
+                <div>Current Objective: Unlock the Core.</div>
                 <br>
             </div>
             <div id="input-line">
-                <span id="prompt">root@arcane:~$</span>
+                <span id="prompt">guest@arcane:~$</span>
                 <input type="text" id="cmd" autofocus autocomplete="off" spellcheck="false">
             </div>
         </div>
 
         <div id="status-win">
-            <div class="panel">
+            <div class="panel" id="nav-panel">
                 <div class="header">FILESYSTEM_NAV</div>
-                <div id="tree-view" style="padding-top: 10px; font-size: 12px; color: #aaa;">
-                    /root<br>
-                    ├── system/<br>
-                    ├── logs/<br>
-                    └── admin/
-                </div>
+                <div id="tree-view" style="padding-top: 10px; font-size: 12px; color: #aaa; white-space: pre;">
+/root
+├── system/
+├── logs/
+├── admin/
+└── bin/</div>
             </div>
             <div class="panel">
                 <div class="header">CPU_THREAD_0</div>
@@ -142,33 +145,44 @@
                 if (this.ctx.state === 'suspended') this.ctx.resume();
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                
+                const now = this.ctx.currentTime;
+
                 if (type === 'key') {
-                    osc.frequency.value = 800 + Math.random() * 200;
+                    osc.frequency.value = 600 + Math.random() * 200;
                     osc.type = 'triangle';
                     gain.gain.value = 0.05;
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.05);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(now + 0.05);
                 } else if (type === 'error') {
-                    osc.frequency.value = 150;
+                    osc.frequency.value = 100;
                     osc.type = 'sawtooth';
+                    gain.gain.value = 0.15;
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); 
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc.stop(now + 0.4);
+                } else if (type === 'access') {
+                    // Positive "Unlock" Sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.linearRampToValueAtTime(880, now + 0.1);
                     gain.gain.value = 0.1;
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-                    osc.stop(this.ctx.currentTime + 0.3);
-                } else if (type === 'success') {
-                    osc.frequency.value = 1200;
-                    gain.gain.value = 0.1;
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.frequency.exponentialRampToValueAtTime(2000, this.ctx.currentTime + 0.2);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
-                    osc.stop(this.ctx.currentTime + 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(now + 0.5);
+                } else if (type === 'win') {
+                    // Victory Chord
+                    [440, 554, 659].forEach((f, i) => {
+                        const o = this.ctx.createOscillator();
+                        const g = this.ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.value = f;
+                        g.gain.value = 0.1;
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 4);
+                        o.connect(g); g.connect(this.ctx.destination);
+                        o.start(now + i * 0.1);
+                        o.stop(now + 4);
+                    });
                 }
             }
         };
@@ -176,27 +190,33 @@
         // --- VIRTUAL FILE SYSTEM ---
         const FileSystem = {
             tree: {
-                "readme.txt": "MISSION: The Core is locked. Find the override code in the logs and execute the unlocker in the admin folder.",
+                "readme.txt": "MISSION: The Core is locked.\n1. Find the password in the logs.\n2. Run /admin/unlock_core.exe",
                 "system": {
                     "kernel.sys": "BINARY_DATA_CORRUPTED",
-                    "drivers": {
-                        "display.dr": "Display driver OK"
-                    }
+                    "drivers": { "display.dr": "Display driver OK" },
+                    "config.txt": "System Owner: Dr. Vance\nRegion: Sector 4"
                 },
                 "logs": {
                     "boot.log": "System boot... OK\nMounting drives... OK",
-                    "chat_history.txt": "USER_A: Did you set the new core password?\nUSER_B: Yeah, I set it to the year the first AI passed the Turing test.\nUSER_A: 2029? That's insecure.\nUSER_B: Whatever, nobody looks here."
+                    "chat_history.txt": "USER_A: The password for the core is the year of the Blackout.\nUSER_B: 2029? That's too obvious.\nUSER_A: No one remembers history anyway."
                 },
                 "admin": {
                     "unlock_core.exe": "EXEC_REQUIRED",
-                    "notes.txt": "Don't forget to run 'crack.exe' if you lose the password."
+                    "notes.txt": "If core unlocks, check the /vault partition for the Omega Key."
                 },
                 "bin": {
                     "crack.exe": "EXEC_REQUIRED",
                     "matrix.exe": "EXEC_REQUIRED"
                 }
             },
-            currentPath: []
+            currentPath: [],
+            
+            // Data for Phase 2 (Injected after unlock)
+            vaultContent: {
+                "manifesto.txt": "THE OMEGA PROTOCOL\n\nTo liberate the system, we need the Master Key.\nIt is a combination of:\n1. The System Owner's Last Name (Check /system/config.txt)\n2. The 'Secret Project' ID Number (See project_alpha.txt)",
+                "project_alpha.txt": "Project Alpha was a failure. \nWe are moving all assets to ID: 9901.\nDo not forget this number.",
+                "warning.log": "Do not run system_liberate.exe unless you are sure."
+            }
         };
 
         // --- TERMINAL LOGIC ---
@@ -206,12 +226,12 @@
             prompt: document.getElementById('prompt'),
             history: [],
             historyIndex: -1,
-            isLocked: false, // LOCK STATE ADDED
+            isLocked: false,
+            accessLevel: 1, // 1 = Guest, 2 = Admin, 3 = Liberated
 
             init() {
                 this.input.addEventListener('keydown', (e) => {
-                    if (this.isLocked) return; // IGNORE INPUT IF LOCKED
-                    
+                    if (this.isLocked) return;
                     if (e.key === 'Enter') this.handleCommand();
                     if (e.key === 'ArrowUp') this.navHistory(-1);
                     if (e.key === 'ArrowDown') this.navHistory(1);
@@ -227,8 +247,7 @@
                 if (this.historyIndex < 0) this.historyIndex = 0;
                 if (this.historyIndex >= this.history.length) {
                     this.historyIndex = this.history.length;
-                    this.input.value = "";
-                    return;
+                    this.input.value = ""; return;
                 }
                 this.input.value = this.history[this.historyIndex];
             },
@@ -244,8 +263,7 @@
             getDir(pathArray) {
                 let current = FileSystem.tree;
                 for (const p of pathArray) {
-                    if (current[p]) current = current[p];
-                    else return null;
+                    if (current[p]) current = current[p]; else return null;
                 }
                 return current;
             },
@@ -254,7 +272,10 @@
                 const val = this.input.value.trim();
                 if (!val) return;
                 
-                this.print(`root@arcane:/${FileSystem.currentPath.join('/')}$ ${val}`, 'txt');
+                const pStr = this.accessLevel === 2 ? 'admin@core' : (this.accessLevel === 3 ? 'OMEGA@SYSTEM' : 'guest@arcane');
+                const pathStr = FileSystem.currentPath.length ? '/' + FileSystem.currentPath.join('/') : '~';
+                
+                this.print(`${pStr}:${pathStr}$ ${val}`, 'txt');
                 this.history.push(val);
                 this.historyIndex = this.history.length;
                 this.input.value = '';
@@ -263,8 +284,6 @@
                 const cmd = parts[0].toLowerCase();
                 const arg = parts[1];
 
-                // --- COMMAND HANDLERS ---
-                
                 switch(cmd) {
                     case 'help':
                         this.print("AVAILABLE COMMANDS:", 'success');
@@ -288,27 +307,16 @@
                                 else if (key.endsWith('.exe')) style = 'exe';
                                 this.print(`${style === 'dir' ? '[DIR] ' : ''}${key}`, style);
                             }
-                        } else {
-                            this.print("Not a directory.", 'error');
-                        }
+                        } else this.print("Not a directory.", 'error');
                         break;
 
                     case 'cd':
-                        if (!arg) {
-                            FileSystem.currentPath = [];
-                            this.print("Returned to root.");
-                            return;
-                        }
-                        if (arg === '..') {
-                            FileSystem.currentPath.pop();
-                        } else {
-                            const nextDir = this.getDir([...FileSystem.currentPath, arg]);
-                            if (nextDir && typeof nextDir === 'object') {
-                                FileSystem.currentPath.push(arg);
-                            } else {
-                                this.print(`Directory '${arg}' not found.`, 'error');
-                                AudioSys.play('error');
-                            }
+                        if (!arg) { FileSystem.currentPath = []; return; }
+                        if (arg === '..') FileSystem.currentPath.pop();
+                        else {
+                            const next = this.getDir([...FileSystem.currentPath, arg]);
+                            if (next && typeof next === 'object') FileSystem.currentPath.push(arg);
+                            else { this.print(`Directory '${arg}' not found.`, 'error'); AudioSys.play('error'); }
                         }
                         break;
 
@@ -318,144 +326,167 @@
                         if (file && typeof file === 'string') {
                             if (file === "EXEC_REQUIRED") this.print("Binary file. Use 'run'.", 'error');
                             else this.print(file, 'success');
-                        } else {
-                            this.print("File not found.", 'error');
-                        }
+                        } else this.print("File not found.", 'error');
                         break;
 
                     case 'run':
                         if (!arg) return this.print("Usage: run [filename]", 'error');
                         
-                        // UNLOCK CORE MISSION LOGIC
+                        // === MISSION 1: UNLOCK CORE ===
                         if (arg === 'unlock_core.exe') {
-                             this.print("AUTHENTICATION REQUIRED. ENTER PASSCODE:", 'alert');
-                             
-                             // LOCK MAIN TERMINAL
-                             this.isLocked = true;
-                             const oldPlaceholder = this.input.placeholder;
-                             this.input.placeholder = "ENTER PASSCODE...";
-                             this.input.value = "";
-                             
-                             const passHandler = (e) => {
-                                 if(e.key === 'Enter') {
-                                     const pass = this.input.value;
-                                     
-                                     // 1. Clear inputs
-                                     this.input.value = '';
-                                     this.input.placeholder = oldPlaceholder;
-                                     
-                                     // 2. Check Pass
-                                     if(pass === '2029') {
-                                         AudioSys.play('success');
-                                         this.print("ACCESS GRANTED. CORE UNLOCKED.", 'success');
-                                         this.print("SYSTEM RESTORE INITIATED...", 'success');
-                                         document.body.style.background = "#002200";
-                                         // Stop Matrix, Start Celebration
-                                         // (Optional visual change here)
-                                     } else {
-                                         AudioSys.play('error');
-                                         this.print("ACCESS DENIED.", 'error');
-                                         document.getElementById('terminal-win').classList.add('shaking');
-                                         setTimeout(()=>document.getElementById('terminal-win').classList.remove('shaking'), 500);
-                                     }
-
-                                     // 3. Remove Handler & Unlock
-                                     this.input.removeEventListener('keydown', passHandler);
-                                     this.isLocked = false; 
-                                 }
-                             };
-                             // Add new listener
-                             this.input.addEventListener('keydown', passHandler);
+                             if (this.accessLevel > 1) return this.print("Core already unlocked.", 'success');
+                             this.handlePasswordInput("ENTER CORE PASSCODE:", "2029", () => {
+                                 // SUCCESS
+                                 this.accessLevel = 2;
+                                 this.print("ACCESS GRANTED. CORE UNLOCKED.", 'success');
+                                 this.print("NEW HARDWARE DETECTED: /vault mounted.", 'gold');
+                                 this.print("NEW SOFTWARE INSTALLED: /bin/system_liberate.exe", 'gold');
+                                 
+                                 // Update System State
+                                 FileSystem.tree["vault"] = FileSystem.vaultContent; // Inject new folder
+                                 FileSystem.tree.bin["system_liberate.exe"] = "EXEC_REQUIRED"; // Inject new exe
+                                 
+                                 // Update UI
+                                 document.getElementById('term-title').innerText = "TERMINAL_UPLINK_V4 [ADMIN]";
+                                 document.getElementById('sec-level').innerText = "[LEVEL 2 ACCESS]";
+                                 document.getElementById('prompt').innerText = "admin@core:~$";
+                                 document.body.style.background = "#001a00";
+                                 this.updateTreeUI();
+                                 AudioSys.play('access');
+                             });
                              return;
                         }
 
-                        if (arg === 'crack.exe') {
-                            this.visualHack();
+                        // === MISSION 2: THE WIN CONDITION ===
+                        if (arg === 'system_liberate.exe') {
+                            if (this.accessLevel < 2) return this.print("ACCESS DENIED. CORE LOCK ACTIVE.", 'error');
+                            
+                            this.print("WARNING: THIS WILL DECRYPT THE ENTIRE SYSTEM.", 'alert');
+                            this.handlePasswordInput("ENTER MASTER KEY (Format: Name-Number):", "Vance-9901", () => {
+                                this.triggerWin();
+                            });
                             return;
                         }
+                        
+                        if (arg === 'crack.exe') { this.visualHack(); return; }
 
                         this.print("Program not found or invalid context.", 'error');
                         break;
 
-                    default:
-                        this.print(`Command '${cmd}' not recognized.`, 'error');
+                    default: this.print(`Command '${cmd}' not recognized.`, 'error');
                 }
             },
 
+            handlePasswordInput(promptText, correctPass, onSuccess) {
+                this.print(promptText, 'gold');
+                this.isLocked = true;
+                const oldPlaceholder = this.input.placeholder;
+                this.input.placeholder = "AWAITING INPUT...";
+                this.input.value = "";
+
+                const handler = (e) => {
+                    if(e.key === 'Enter') {
+                        const inputVal = this.input.value.trim();
+                        this.input.value = '';
+                        this.input.placeholder = oldPlaceholder;
+                        
+                        if(inputVal === correctPass) {
+                            onSuccess();
+                        } else {
+                            AudioSys.play('error');
+                            this.print("ACCESS DENIED.", 'error');
+                            document.getElementById('terminal-win').classList.add('shaking');
+                            setTimeout(()=>document.getElementById('terminal-win').classList.remove('shaking'), 500);
+                        }
+                        this.input.removeEventListener('keydown', handler);
+                        this.isLocked = false;
+                    }
+                };
+                this.input.addEventListener('keydown', handler);
+            },
+
+            updateTreeUI() {
+                const tree = document.getElementById('tree-view');
+                tree.innerText = `/root
+├── system/
+├── logs/
+├── admin/
+├── bin/
+└── vault/ [NEW]`;
+                tree.style.color = "#00ff41";
+            },
+
+            triggerWin() {
+                this.accessLevel = 3;
+                AudioSys.play('win');
+                this.print("KEY ACCEPTED. DECRYPTING ROOT...", 'gold');
+                
+                // Visual Effects
+                let count = 0;
+                const winLoop = setInterval(() => {
+                    this.print(`DECRYPTING SECTOR ${count}... OK`, 'success');
+                    count++;
+                    if(count > 10) {
+                        clearInterval(winLoop);
+                        this.print("\n>>> SYSTEM LIBERATED <<<", 'gold');
+                        this.print("YOU HAVE BEATEN THE SIMULATION.", 'gold');
+                        
+                        // Change Styles
+                        document.body.style.background = "#111";
+                        document.documentElement.style.setProperty('--primary', '#ffd700');
+                        document.documentElement.style.setProperty('--dim', '#332a00');
+                        document.getElementById('prompt').innerText = "OMEGA@SYSTEM:~$";
+                    }
+                }, 200);
+            },
+            
             async visualHack() {
-                this.print("INITIATING BRUTE FORCE ATTACK...", 'exe');
-                const chars = "0123456789ABCDEF";
-                for(let i=0; i<20; i++) {
-                    let str = "";
-                    for(let j=0; j<32; j++) str += chars[Math.floor(Math.random()*16)];
-                    this.print(str, 'dim');
+                this.print("RUNNING BRUTE FORCE...", 'exe');
+                const chars = "XYZ010101";
+                for(let i=0; i<15; i++) {
+                    this.print(Array(30).fill(0).map(()=>chars[Math.floor(Math.random()*chars.length)]).join(''), 'dim');
                     await new Promise(r => setTimeout(r, 50));
                 }
-                this.print("FAILURE. ENCRYPTION TOO STRONG.", 'error');
+                this.print("FAILED.", 'error');
             }
         };
 
         // --- VISUALS ---
         const Visuals = {
             init() {
-                // Matrix Rain
                 const c = document.getElementById('bgCanvas');
                 const ctx = c.getContext('2d');
                 let w = c.width = window.innerWidth;
                 let h = c.height = window.innerHeight;
-                const cols = Math.floor(w / 20);
-                const ypos = Array(cols).fill(0);
+                const ypos = Array(Math.floor(w/20)).fill(0);
 
                 setInterval(() => {
-                    ctx.fillStyle = '#0001';
-                    ctx.fillRect(0, 0, w, h);
-                    ctx.fillStyle = '#0f0';
+                    ctx.fillStyle = '#0001'; ctx.fillRect(0,0,w,h);
+                    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--primary');
                     ctx.font = '15pt monospace';
                     ypos.forEach((y, i) => {
-                        const text = String.fromCharCode(Math.random() * 128);
-                        const x = i * 20;
-                        ctx.fillText(text, x, y);
-                        if (y > h + Math.random() * 10000) ypos[i] = 0;
-                        else ypos[i] = y + 20;
+                        const t = String.fromCharCode(Math.random() * 128);
+                        ctx.fillText(t, i*20, y);
+                        ypos[i] = (y > h + Math.random()*10000) ? 0 : y + 20;
                     });
                 }, 50);
-
+                
                 // CPU Graph
                 const gC = document.getElementById('graphCanvas');
                 const gCtx = gC.getContext('2d');
                 const data = new Array(50).fill(50);
                 setInterval(() => {
-                    data.shift();
-                    data.push(Math.random() * 100);
-                    gCtx.clearRect(0, 0, 300, 150);
-                    gCtx.beginPath();
-                    gCtx.strokeStyle = '#0f0';
-                    gCtx.lineWidth = 2;
-                    data.forEach((d, i) => {
-                        const x = i * (gC.width / 50);
-                        const y = gC.height - (d / 100 * gC.height);
-                        if(i===0) gCtx.moveTo(x,y); else gCtx.lineTo(x,y);
-                    });
+                    data.shift(); data.push(Math.random() * 100);
+                    gCtx.clearRect(0,0,300,150);
+                    gCtx.beginPath(); gCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--primary');
+                    gCtx.lineWidth=2;
+                    data.forEach((d,i)=> { const x=i*(gC.width/50), y=gC.height-(d/100*gC.height); i===0?gCtx.moveTo(x,y):gCtx.lineTo(x,y); });
                     gCtx.stroke();
                 }, 100);
-
-                // Network Log
-                const net = document.getElementById('net-log');
-                setInterval(() => {
-                    const ips = ["192.168.1.40", "10.0.0.5", "172.16.0.1"];
-                    const status = ["ACK", "SYN", "FIN", "RST"];
-                    const p = document.createElement('div');
-                    p.innerText = `> ${ips[Math.floor(Math.random()*3)]} : ${status[Math.floor(Math.random()*4)]}`;
-                    net.prepend(p);
-                    if(net.children.length > 15) net.lastChild.remove();
-                }, 800);
             }
         };
 
-        window.onload = () => {
-            Terminal.init();
-            Visuals.init();
-        };
+        window.onload = () => { Terminal.init(); Visuals.init(); };
     </script>
 </body>
 </html>
