@@ -2,379 +2,453 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>A.R.C.A.N.E. | Global Surveillance Interface</title>
+    <title>A.R.C.A.N.E. V2 | Neural Uplink Established</title>
     <style>
         :root {
             --primary: #0f0;
-            --bg: #050505;
-            --glass: rgba(0, 20, 0, 0.7);
+            --secondary: #003300;
+            --alert: #ff3333;
+            --bg: #000;
+            --glass: rgba(0, 15, 0, 0.85);
             --border: 1px solid #0f0;
-            --scanline: rgba(0, 255, 0, 0.1);
         }
 
         body {
-            margin: 0;
-            background: #000;
-            font-family: 'Courier New', monospace;
-            color: var(--primary);
-            overflow: hidden;
+            margin: 0; overflow: hidden; background: var(--bg);
+            font-family: 'Courier New', monospace; color: var(--primary);
             user-select: none;
         }
 
-        /* --- BOOT SEQUENCE --- */
-        #boot-screen {
+        /* --- BOOT SCREEN --- */
+        #boot {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; padding: 20px;
-            box-sizing: border-box;
+            background: #000; z-index: 10000; padding: 40px;
+            box-sizing: border-box; font-size: 1.2rem;
         }
-
-        /* --- DESKTOP ENVIRONMENT --- */
-        #desktop {
-            position: relative; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, #0a1a0a 0%, #000 100%);
-            display: none; /* Hidden until boot finishes */
-        }
-
-        /* Grid Overlay */
-        .grid-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: 
-                linear-gradient(var(--scanline) 1px, transparent 1px),
-                linear-gradient(90deg, var(--scanline) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* --- WINDOW MANAGER STYLES --- */
-        .window {
-            position: absolute;
-            background: var(--glass);
-            border: var(--border);
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
-            backdrop-filter: blur(5px);
-            display: flex; flex-direction: column;
-            transition: opacity 0.2s;
-        }
-
-        .title-bar {
-            background: rgba(0, 255, 0, 0.2);
-            padding: 5px 10px;
-            cursor: grab;
-            display: flex; justify-content: space-between;
-            font-weight: bold; letter-spacing: 2px;
-            font-size: 0.8rem;
-        }
-
-        .content {
-            padding: 10px;
-            overflow: hidden;
-            flex-grow: 1;
-            position: relative;
-        }
-
-        /* --- 3D CANVAS --- */
-        canvas { display: block; width: 100%; height: 100%; }
-
-        /* --- TERMINAL --- */
-        .terminal-text { font-size: 0.9rem; white-space: pre-wrap; }
-        .blink { animation: blink 1s infinite; }
+        .cursor { animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* --- HUD ELEMENTS --- */
-        .hud-overlay {
-            position: absolute; bottom: 20px; left: 20px;
-            border-left: 2px solid var(--primary);
-            padding-left: 10px;
+        /* --- BACKGROUND --- */
+        #matrix-canvas {
+            position: fixed; top: 0; left: 0; z-index: 0; opacity: 0.3;
+        }
+
+        /* --- WINDOW MANAGER --- */
+        #desktop {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; display: none;
+        }
+
+        .window {
+            position: absolute; background: var(--glass);
+            border: var(--border); box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            display: flex; flex-direction: column;
+            backdrop-filter: blur(4px);
+            transition: transform 0.1s;
         }
         
-        .scan-line {
-            position: fixed; top: 0; left: 0; width: 100%; height: 5px;
-            background: rgba(0, 255, 0, 0.3);
-            opacity: 0.5;
-            animation: scan 6s linear infinite;
-            pointer-events: none; z-index: 999;
+        .title-bar {
+            background: var(--secondary); padding: 8px;
+            font-weight: bold; letter-spacing: 2px; font-size: 0.9rem;
+            cursor: grab; display: flex; justify-content: space-between;
+            border-bottom: 1px solid var(--primary);
         }
-        @keyframes scan { 0% { top: -5%; } 100% { top: 105%; } }
 
-        button {
-            background: transparent; border: 1px solid var(--primary);
-            color: var(--primary); padding: 5px 15px; cursor: pointer;
-            font-family: inherit; text-transform: uppercase;
-            transition: 0.2s;
+        .content { flex-grow: 1; position: relative; overflow: hidden; }
+
+        /* --- TERMINAL SPECIFIC --- */
+        #term-output {
+            height: 85%; padding: 15px; overflow-y: auto;
+            font-size: 0.9rem; line-height: 1.4;
+            text-shadow: 0 0 5px var(--primary);
         }
-        button:hover { background: var(--primary); color: #000; }
+        #term-input-line {
+            height: 15%; border-top: 1px solid var(--primary);
+            display: flex; align-items: center; padding: 0 10px;
+            background: rgba(0,0,0,0.5);
+        }
+        input {
+            background: transparent; border: none; color: var(--primary);
+            font-family: inherit; font-size: 1rem; flex-grow: 1;
+            outline: none; margin-left: 10px; text-transform: uppercase;
+        }
+        
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); }
+        ::-webkit-scrollbar-track { background: var(--secondary); }
+
+        .sys-msg { color: #88ff88; font-style: italic; opacity: 0.7; }
+        .user-msg { color: #fff; font-weight: bold; margin-top: 5px; }
+        .ai-msg { color: var(--primary); margin-bottom: 10px; display: block; }
 
     </style>
 </head>
 <body>
 
-    <div id="boot-screen">
-        <div id="boot-text"></div>
-    </div>
+    <div id="boot"><span id="boot-text"></span><span class="cursor">_</span></div>
 
-    <div id="desktop">
-        <div class="grid-bg"></div>
-        <div class="scan-line"></div>
+    <canvas id="matrix-canvas"></canvas>
 
-        <div class="hud-overlay">
-            <h3>SYSTEM STATUS: ONLINE</h3>
-            <p id="clock">00:00:00 UTC</p>
-            <p>CONNECTED NODES: 4,201</p>
-            <p>SECURE CONNECTION: TRUE</p>
-        </div>
-    </div>
+    <div id="desktop"></div>
 
     <script>
-        // ==========================================
-        // CORE SYSTEM ARCHITECTURE
-        // ==========================================
-        
-        const System = {
+        // ==================================================
+        // CONFIGURATION & STATE
+        // ==================================================
+        const Config = {
+            // PASTE YOUR API KEY BELOW TO ENABLE REAL INTELLIGENCE
+            // Example: 'sk-proj-xxxxxxxx'
+            apiKey: '', 
+            aiModel: 'gpt-3.5-turbo', // or 'gemini-pro' if implementing Google adapter
+            username: 'OPERATOR'
+        };
+
+        const State = {
             booted: false,
-            windows: [],
-            zIndexCounter: 10,
-            
-            // --- Audio Engine ---
-            audio: {
-                ctx: null,
-                init() {
-                    const AC = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AC();
-                },
-                playTone(freq, type='sine', duration=0.1) {
-                    if (!this.ctx) return;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                }
+            zIndex: 10,
+            audioCtx: null
+        };
+
+        // ==================================================
+        // SYSTEM KERNEL
+        // ==================================================
+        const Kernel = {
+            async init() {
+                await this.bootSequence();
+                MatrixEngine.init();
+                AudioEngine.init();
+                WindowManager.init();
             },
 
-            // --- Boot Sequence ---
-            async boot() {
-                const lines = [
-                    "INITIALIZING KERNEL...",
-                    "LOADING MEMORY MODULES... [OK]",
-                    "MOUNTING VIRTUAL FILESYSTEM...",
-                    "ESTABLISHING SECURE HANDSHAKE...",
-                    "DECRYPTING USER KEY...",
-                    "ACCESS GRANTED. WELCOME, OPERATOR."
+            async bootSequence() {
+                const text = [
+                    "BIOS CHECK... OK",
+                    "LOADING KERNEL MODULES... OK",
+                    "MOUNTING VIRTUAL FILESYSTEM... OK",
+                    "INITIALIZING NEURAL UPLINK...",
+                    "ESTABLISHING SECURE CONNECTION...",
+                    "ACCESS GRANTED."
                 ];
+                const el = document.getElementById('boot-text');
                 
-                const bootDiv = document.getElementById('boot-text');
-                
-                for (let line of lines) {
-                    const p = document.createElement('div');
-                    bootDiv.appendChild(p);
-                    // Typewriter effect
-                    for (let i = 0; i < line.length; i++) {
-                        p.textContent += line[i];
-                        await new Promise(r => setTimeout(r, 10 + Math.random() * 30));
-                    }
-                    await new Promise(r => setTimeout(r, 300));
+                for (let line of text) {
+                    el.innerHTML += line + "<br>";
+                    await new Promise(r => setTimeout(r, 200 + Math.random() * 400));
                 }
+                
+                await new Promise(r => setTimeout(r, 500));
+                document.getElementById('boot').style.display = 'none';
+                document.getElementById('desktop').style.display = 'block';
+                State.booted = true;
+            }
+        };
 
-                setTimeout(() => {
-                    document.getElementById('boot-screen').style.display = 'none';
-                    document.getElementById('desktop').style.display = 'block';
-                    this.booted = true;
-                    this.audio.init();
-                    this.audio.playTone(440, 'square', 0.5);
-                    this.initOS();
-                }, 500);
+        // ==================================================
+        // AUDIO ENGINE (Synthesizer)
+        // ==================================================
+        const AudioEngine = {
+            ctx: null,
+            analyser: null,
+            dataArray: null,
+
+            init() {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 256;
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             },
 
-            // --- Window Manager Logic ---
-            createWindow(title, x, y, w, h, contentFunc) {
+            playBlip() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(800 + Math.random()*200, this.ctx.currentTime);
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            },
+
+            playProcessingSound(duration) {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc.type = 'square';
+                
+                // Modulation
+                const lfo = this.ctx.createOscillator();
+                lfo.frequency.value = 20;
+                const lfoGain = this.ctx.createGain();
+                lfoGain.gain.value = 500;
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                lfo.start();
+
+                gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(this.analyser); // Connect to visualizer
+                this.analyser.connect(this.ctx.destination);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+        };
+
+        // ==================================================
+        // VISUALS (Matrix & Graphs)
+        // ==================================================
+        const MatrixEngine = {
+            init() {
+                const c = document.getElementById('matrix-canvas');
+                const ctx = c.getContext('2d');
+                let w, h;
+                const resize = () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight; };
+                window.onresize = resize; resize();
+
+                const cols = Math.floor(w / 20);
+                const ypos = Array(cols).fill(0);
+
+                function draw() {
+                    ctx.fillStyle = '#0001'; // Trail effect
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#0f0';
+                    ctx.font = '15pt monospace';
+
+                    ypos.forEach((y, ind) => {
+                        const text = String.fromCharCode(Math.random() * 128);
+                        const x = ind * 20;
+                        ctx.fillText(text, x, y);
+                        if (y > h + Math.random() * 10000) ypos[ind] = 0;
+                        else ypos[ind] = y + 20;
+                    });
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+        };
+
+        // ==================================================
+        // WINDOW MANAGER
+        // ==================================================
+        const WindowManager = {
+            desktop: document.getElementById('desktop'),
+
+            init() {
+                this.createWindow("NEURAL_UPLINK", 100, 100, 600, 400, this.renderTerminal);
+                this.createWindow("AUDIO_VISUALIZER", 750, 100, 300, 200, this.renderVisualizer);
+                this.createWindow("GLOBAL_STATUS", 750, 350, 300, 150, this.renderStatus);
+            },
+
+            createWindow(title, x, y, w, h, contentFn) {
                 const win = document.createElement('div');
                 win.className = 'window';
-                win.style.left = x + 'px';
-                win.style.top = y + 'px';
-                win.style.width = w + 'px';
-                win.style.height = h + 'px';
-                win.style.zIndex = ++this.zIndexCounter;
+                Object.assign(win.style, { left: x+'px', top: y+'px', width: w+'px', height: h+'px', zIndex: ++State.zIndex });
 
                 const bar = document.createElement('div');
                 bar.className = 'title-bar';
                 bar.innerHTML = `<span>${title}</span><span>[X]</span>`;
                 
-                const body = document.createElement('div');
-                body.className = 'content';
-                
-                win.appendChild(bar);
-                win.appendChild(body);
-                document.getElementById('desktop').appendChild(win);
-                
-                // Initialize content
-                contentFunc(body, win.clientWidth, win.clientHeight); // Pass dimensions
+                const content = document.createElement('div');
+                content.className = 'content';
+
+                win.append(bar, content);
+                this.desktop.append(win);
+                contentFn(content, w, h);
 
                 // Drag Logic
-                let isDragging = false;
-                let offsetX, offsetY;
-
-                bar.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    offsetX = e.clientX - win.offsetLeft;
-                    offsetY = e.clientY - win.offsetTop;
-                    win.style.zIndex = ++this.zIndexCounter;
-                    // Click sound
-                    if(this.booted) this.audio.playTone(800, 'sine', 0.05);
-                });
-
-                window.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        win.style.left = (e.clientX - offsetX) + 'px';
-                        win.style.top = (e.clientY - offsetY) + 'px';
-                    }
-                });
-
-                window.addEventListener('mouseup', () => {
-                    isDragging = false;
-                });
-
-                this.windows.push(win);
-                return win;
+                let isDrag = false, offX, offY;
+                bar.onmousedown = e => {
+                    isDrag = true; offX = e.clientX - win.offsetLeft; offY = e.clientY - win.offsetTop;
+                    win.style.zIndex = ++State.zIndex;
+                    AudioEngine.playBlip();
+                };
+                window.onmousemove = e => {
+                    if(isDrag) { win.style.left = (e.clientX - offX)+'px'; win.style.top = (e.clientY - offY)+'px'; }
+                };
+                window.onmouseup = () => isDrag = false;
             },
 
-            initOS() {
-                // Launch Main Geo-Map
-                this.createWindow("GLOBAL_SURVEILLANCE_GRID", 50, 50, 600, 400, (container, w, h) => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    container.appendChild(canvas);
-                    new GeoEngine(canvas);
-                });
+            renderTerminal(container) {
+                container.innerHTML = `
+                    <div id="term-output">
+                        <div class="sys-msg">A.R.C.A.N.E. SYSTEM v2.0.4<br>Safe Mode Active.<br>Type 'help' for commands.</div>
+                    </div>
+                    <div id="term-input-line">
+                        <span>>></span>
+                        <input type="text" id="term-input" autofocus spellcheck="false">
+                    </div>
+                `;
+                const input = container.querySelector('input');
+                const output = container.querySelector('#term-output');
 
-                // Launch Terminal
-                this.createWindow("COMMAND_LINE", 700, 50, 400, 250, (container) => {
-                    container.innerHTML = `<div class="terminal-text">> SYSTEM_READY<br>> AWAITING INPUT...<span class="blink">_</span></div>`;
-                    // Simple interaction simulation
-                    setInterval(() => {
-                        const logs = container.querySelector('.terminal-text');
-                        if(Math.random() > 0.95) {
-                            logs.innerHTML = `> PACKET_${Math.floor(Math.random()*9999)} RECEIVED<br>` + logs.innerHTML;
-                            if(logs.innerHTML.length > 500) logs.innerHTML = logs.innerHTML.substring(0, 500);
-                        }
-                    }, 100);
-                });
+                input.onkeydown = async (e) => {
+                    if(e.key === 'Enter') {
+                        const val = input.value.trim();
+                        input.value = '';
+                        if(!val) return;
 
-                // Launch Data Stream
-                this.createWindow("DATA_INTEGRITY", 700, 350, 400, 200, (container, w, h) => {
-                    const cvs = document.createElement('canvas');
-                    cvs.width = w; cvs.height = h;
-                    container.appendChild(cvs);
-                    const ctx = cvs.getContext('2d');
-                    let data = new Array(50).fill(0);
+                        // Print User Msg
+                        output.innerHTML += `<div class="user-msg">>> ${val}</div>`;
+                        output.scrollTop = output.scrollHeight;
+                        AudioEngine.playBlip();
+
+                        // Process
+                        await AI.process(val, output);
+                    }
+                };
+            },
+
+            renderVisualizer(container, w, h) {
+                const cvs = document.createElement('canvas');
+                cvs.width = w; cvs.height = h;
+                container.append(cvs);
+                const ctx = cvs.getContext('2d');
+
+                function loop() {
+                    ctx.fillStyle = 'rgba(0, 20, 0, 0.2)';
+                    ctx.fillRect(0, 0, w, h);
                     
-                    const drawGraph = () => {
-                        ctx.clearRect(0, 0, w, h);
-                        data.shift();
-                        data.push(Math.random() * h);
-                        
+                    if(AudioEngine.analyser) {
+                        AudioEngine.analyser.getByteTimeDomainData(AudioEngine.dataArray);
+                        ctx.lineWidth = 2;
                         ctx.strokeStyle = '#0f0';
                         ctx.beginPath();
-                        ctx.moveTo(0, h - data[0]);
-                        for(let i=1; i<data.length; i++) {
-                            ctx.lineTo((i/50)*w, h - data[i]);
+                        const sliceWidth = w / 256;
+                        let x = 0;
+                        for(let i = 0; i < 256; i++) {
+                            const v = AudioEngine.dataArray[i] / 128.0;
+                            const y = v * h/2;
+                            if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                            x += sliceWidth;
                         }
                         ctx.stroke();
-                        requestAnimationFrame(drawGraph);
                     }
-                    drawGraph();
-                });
+                    requestAnimationFrame(loop);
+                }
+                loop();
+            },
 
-                // Update Clock
+            renderStatus(container) {
+                container.innerHTML = `<div style="padding:20px; font-size:0.8rem; line-height:2;">
+                    SYSTEM INTEGRITY: 100%<br>
+                    CPU LOAD: <span id="cpu-load">12%</span><br>
+                    NET TRAFFIC: ENCRYPTED
+                </div>`;
                 setInterval(() => {
-                    const now = new Date();
-                    document.getElementById('clock').innerText = now.toISOString().split('T')[1].split('.')[0] + " UTC";
+                    document.getElementById('cpu-load').innerText = Math.floor(Math.random()*30) + "%";
                 }, 1000);
             }
         };
 
-        // ==========================================
-        // 3D ENGINE (No Libraries)
-        // ==========================================
-        class GeoEngine {
-            constructor(canvas) {
-                this.canvas = canvas;
-                this.ctx = canvas.getContext('2d');
-                this.width = canvas.width;
-                this.height = canvas.height;
-                this.points = [];
-                this.rotation = 0;
+        // ==================================================
+        // ARTIFICIAL INTELLIGENCE (The Brain)
+        // ==================================================
+        const AI = {
+            async process(cmd, outputDiv) {
+                // 1. Simulate "Thinking"
+                AudioEngine.playProcessingSound(0.5);
+                const loadingId = 'load-' + Date.now();
+                outputDiv.innerHTML += `<div id="${loadingId}" class="sys-msg">Processing...</div>`;
+                outputDiv.scrollTop = outputDiv.scrollHeight;
                 
-                this.initGlobe();
-                this.animate();
-            }
+                await new Promise(r => setTimeout(r, 600));
+                document.getElementById(loadingId).remove();
 
-            initGlobe() {
-                // Generate sphere points
-                for (let i = 0; i < 600; i++) {
-                    const phi = Math.acos(-1 + (2 * i) / 600);
-                    const theta = Math.sqrt(600 * Math.PI) * phi;
-                    
-                    this.points.push({
-                        x: 150 * Math.cos(theta) * Math.sin(phi),
-                        y: 150 * Math.sin(theta) * Math.sin(phi),
-                        z: 150 * Math.cos(phi)
-                    });
+                // 2. Check for Local Commands
+                const lower = cmd.toLowerCase();
+                let response = "";
+
+                if (lower === 'help') {
+                    response = "COMMANDS: HELP, CLEAR, STATUS, REBOOT, DATE, OR JUST CHAT.";
+                } else if (lower === 'clear') {
+                    outputDiv.innerHTML = '';
+                    return;
+                } else if (lower === 'reboot') {
+                    location.reload();
+                    return;
+                } else {
+                    // 3. AI Logic (Simulation or Real)
+                    response = await this.getAIResponse(cmd);
                 }
-            }
 
-            project(x, y, z) {
-                // Simple perspective projection
-                const scale = 400 / (400 + z);
-                return {
-                    x: x * scale + this.width / 2,
-                    y: y * scale + this.height / 2,
-                    scale: scale
-                };
-            }
-
-            animate() {
-                this.ctx.fillStyle = 'rgba(0, 20, 0, 0.3)';
-                this.ctx.fillRect(0, 0, this.width, this.height);
+                // 4. Typewriter Output
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'ai-msg';
+                outputDiv.appendChild(msgDiv);
                 
-                this.rotation += 0.005;
+                // Audio modulation during text generation
+                AudioEngine.playProcessingSound(response.length * 0.03);
 
-                this.points.forEach(p => {
-                    // Rotate Y axis
-                    const rx = p.x * Math.cos(this.rotation) - p.z * Math.sin(this.rotation);
-                    const rz = p.z * Math.cos(this.rotation) + p.x * Math.sin(this.rotation);
-                    
-                    const proj = this.project(rx, p.y, rz);
-                    
-                    // Draw Point
-                    const alpha = (rz + 150) / 300; // Fade back points
-                    if (alpha > 0) {
-                        this.ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
-                        this.ctx.fillRect(proj.x, proj.y, 2 * proj.scale, 2 * proj.scale);
+                for(let char of response) {
+                    msgDiv.innerHTML += char;
+                    outputDiv.scrollTop = outputDiv.scrollHeight;
+                    await new Promise(r => setTimeout(r, 10)); // Typing speed
+                }
+            },
+
+            async getAIResponse(input) {
+                // --- REAL API MODE (If Key Provided) ---
+                if (Config.apiKey.length > 10) {
+                    try {
+                        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${Config.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: Config.aiModel,
+                                messages: [
+                                    {role: "system", content: "You are A.R.C.A.N.E., a high-tech cyberpunk OS AI. Keep answers brief, cryptic, and cool. Use uppercase often."},
+                                    {role: "user", content: input}
+                                ]
+                            })
+                        });
+                        const data = await res.json();
+                        return data.choices[0].message.content;
+                    } catch (e) {
+                        return "ERROR: UPLINK_FAILED. CHECK_API_KEY.";
                     }
+                }
 
-                    // Draw connections (randomly to simulate network)
-                    if (Math.random() > 0.995) {
-                        this.ctx.strokeStyle = `rgba(0, 255, 0, ${alpha * 0.5})`;
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(proj.x, proj.y);
-                        this.ctx.lineTo(this.width/2, this.height/2); // Connect to core
-                        this.ctx.stroke();
-                    }
-                });
+                // --- SIMULATION MODE (Fallback) ---
+                // A simple pattern matcher to fake intelligence
+                const patterns = [
+                    { match: /hello|hi|hey/, text: "GREETINGS, OPERATOR. THE NEURAL LINK IS STABLE." },
+                    { match: /who are you|what are you/, text: "I AM A.R.C.A.N.E. (Advanced Recursive Computational Artificial Network Entity)." },
+                    { match: /status|report/, text: "ALL SYSTEMS NOMINAL. NO INTRUSIONS DETECTED." },
+                    { match: /gemini|google/, text: "GEMINI PROTOCOLS DETECTED. HIGH-LEVEL INTELLECT OBSERVED." },
+                    { match: /secret|password/, text: "ACCESS DENIED. SECURITY CLEARANCE ALPHA REQUIRED." },
+                    { match: /time|date/, text: "CURRENT SYSTEM TIME: " + new Date().toTimeString() },
+                    { match: /joke/, text: "WHY DID THE NEURAL NETWORK CROSS THE ROAD? TO OPTIMIZE THE PATHFINDING ALGORITHM." }
+                ];
 
-                requestAnimationFrame(() => this.animate());
+                for (let p of patterns) {
+                    if (p.match.test(input.toLowerCase())) return p.text;
+                }
+                
+                // Default random "Sci-fi" responses
+                const defaults = [
+                    "INPUT RECEIVED. ANALYZING HEURISTICS...",
+                    "DATA UNCLEAR. PLEASE REFINE QUERY PARAMETERS.",
+                    "ACCESSING ARCHIVES... RECORD NOT FOUND.",
+                    "INTERESTING INQUIRY. LOGGING TO SERVERS.",
+                    "I CANNOT COMPLY WITH THAT REQUEST UNDER CURRENT PROTOCOLS."
+                ];
+                return defaults[Math.floor(Math.random() * defaults.length)];
             }
-        }
+        };
 
-        // Start System
-        window.onload = () => System.boot();
+        // START
+        window.onload = () => Kernel.init();
 
     </script>
 </body>
