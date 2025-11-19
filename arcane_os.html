@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A.R.C.A.N.E. | Global Surveillance Interface</title>
+    <style>
+        :root {
+            --primary: #0f0;
+            --bg: #050505;
+            --glass: rgba(0, 20, 0, 0.7);
+            --border: 1px solid #0f0;
+            --scanline: rgba(0, 255, 0, 0.1);
+        }
+
+        body {
+            margin: 0;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: var(--primary);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- BOOT SEQUENCE --- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- DESKTOP ENVIRONMENT --- */
+        #desktop {
+            position: relative; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #0a1a0a 0%, #000 100%);
+            display: none; /* Hidden until boot finishes */
+        }
+
+        /* Grid Overlay */
+        .grid-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--scanline) 1px, transparent 1px),
+                linear-gradient(90deg, var(--scanline) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- WINDOW MANAGER STYLES --- */
+        .window {
+            position: absolute;
+            background: var(--glass);
+            border: var(--border);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+            backdrop-filter: blur(5px);
+            display: flex; flex-direction: column;
+            transition: opacity 0.2s;
+        }
+
+        .title-bar {
+            background: rgba(0, 255, 0, 0.2);
+            padding: 5px 10px;
+            cursor: grab;
+            display: flex; justify-content: space-between;
+            font-weight: bold; letter-spacing: 2px;
+            font-size: 0.8rem;
+        }
+
+        .content {
+            padding: 10px;
+            overflow: hidden;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* --- 3D CANVAS --- */
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- TERMINAL --- */
+        .terminal-text { font-size: 0.9rem; white-space: pre-wrap; }
+        .blink { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- HUD ELEMENTS --- */
+        .hud-overlay {
+            position: absolute; bottom: 20px; left: 20px;
+            border-left: 2px solid var(--primary);
+            padding-left: 10px;
+        }
+        
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 5px;
+            background: rgba(0, 255, 0, 0.3);
+            opacity: 0.5;
+            animation: scan 6s linear infinite;
+            pointer-events: none; z-index: 999;
+        }
+        @keyframes scan { 0% { top: -5%; } 100% { top: 105%; } }
+
+        button {
+            background: transparent; border: 1px solid var(--primary);
+            color: var(--primary); padding: 5px 15px; cursor: pointer;
+            font-family: inherit; text-transform: uppercase;
+            transition: 0.2s;
+        }
+        button:hover { background: var(--primary); color: #000; }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div id="boot-text"></div>
+    </div>
+
+    <div id="desktop">
+        <div class="grid-bg"></div>
+        <div class="scan-line"></div>
+
+        <div class="hud-overlay">
+            <h3>SYSTEM STATUS: ONLINE</h3>
+            <p id="clock">00:00:00 UTC</p>
+            <p>CONNECTED NODES: 4,201</p>
+            <p>SECURE CONNECTION: TRUE</p>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CORE SYSTEM ARCHITECTURE
+        // ==========================================
+        
+        const System = {
+            booted: false,
+            windows: [],
+            zIndexCounter: 10,
+            
+            // --- Audio Engine ---
+            audio: {
+                ctx: null,
+                init() {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AC();
+                },
+                playTone(freq, type='sine', duration=0.1) {
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                }
+            },
+
+            // --- Boot Sequence ---
+            async boot() {
+                const lines = [
+                    "INITIALIZING KERNEL...",
+                    "LOADING MEMORY MODULES... [OK]",
+                    "MOUNTING VIRTUAL FILESYSTEM...",
+                    "ESTABLISHING SECURE HANDSHAKE...",
+                    "DECRYPTING USER KEY...",
+                    "ACCESS GRANTED. WELCOME, OPERATOR."
+                ];
+                
+                const bootDiv = document.getElementById('boot-text');
+                
+                for (let line of lines) {
+                    const p = document.createElement('div');
+                    bootDiv.appendChild(p);
+                    // Typewriter effect
+                    for (let i = 0; i < line.length; i++) {
+                        p.textContent += line[i];
+                        await new Promise(r => setTimeout(r, 10 + Math.random() * 30));
+                    }
+                    await new Promise(r => setTimeout(r, 300));
+                }
+
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('desktop').style.display = 'block';
+                    this.booted = true;
+                    this.audio.init();
+                    this.audio.playTone(440, 'square', 0.5);
+                    this.initOS();
+                }, 500);
+            },
+
+            // --- Window Manager Logic ---
+            createWindow(title, x, y, w, h, contentFunc) {
+                const win = document.createElement('div');
+                win.className = 'window';
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+                win.style.width = w + 'px';
+                win.style.height = h + 'px';
+                win.style.zIndex = ++this.zIndexCounter;
+
+                const bar = document.createElement('div');
+                bar.className = 'title-bar';
+                bar.innerHTML = `<span>${title}</span><span>[X]</span>`;
+                
+                const body = document.createElement('div');
+                body.className = 'content';
+                
+                win.appendChild(bar);
+                win.appendChild(body);
+                document.getElementById('desktop').appendChild(win);
+                
+                // Initialize content
+                contentFunc(body, win.clientWidth, win.clientHeight); // Pass dimensions
+
+                // Drag Logic
+                let isDragging = false;
+                let offsetX, offsetY;
+
+                bar.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    offsetX = e.clientX - win.offsetLeft;
+                    offsetY = e.clientY - win.offsetTop;
+                    win.style.zIndex = ++this.zIndexCounter;
+                    // Click sound
+                    if(this.booted) this.audio.playTone(800, 'sine', 0.05);
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        win.style.left = (e.clientX - offsetX) + 'px';
+                        win.style.top = (e.clientY - offsetY) + 'px';
+                    }
+                });
+
+                window.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                this.windows.push(win);
+                return win;
+            },
+
+            initOS() {
+                // Launch Main Geo-Map
+                this.createWindow("GLOBAL_SURVEILLANCE_GRID", 50, 50, 600, 400, (container, w, h) => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    container.appendChild(canvas);
+                    new GeoEngine(canvas);
+                });
+
+                // Launch Terminal
+                this.createWindow("COMMAND_LINE", 700, 50, 400, 250, (container) => {
+                    container.innerHTML = `<div class="terminal-text">> SYSTEM_READY<br>> AWAITING INPUT...<span class="blink">_</span></div>`;
+                    // Simple interaction simulation
+                    setInterval(() => {
+                        const logs = container.querySelector('.terminal-text');
+                        if(Math.random() > 0.95) {
+                            logs.innerHTML = `> PACKET_${Math.floor(Math.random()*9999)} RECEIVED<br>` + logs.innerHTML;
+                            if(logs.innerHTML.length > 500) logs.innerHTML = logs.innerHTML.substring(0, 500);
+                        }
+                    }, 100);
+                });
+
+                // Launch Data Stream
+                this.createWindow("DATA_INTEGRITY", 700, 350, 400, 200, (container, w, h) => {
+                    const cvs = document.createElement('canvas');
+                    cvs.width = w; cvs.height = h;
+                    container.appendChild(cvs);
+                    const ctx = cvs.getContext('2d');
+                    let data = new Array(50).fill(0);
+                    
+                    const drawGraph = () => {
+                        ctx.clearRect(0, 0, w, h);
+                        data.shift();
+                        data.push(Math.random() * h);
+                        
+                        ctx.strokeStyle = '#0f0';
+                        ctx.beginPath();
+                        ctx.moveTo(0, h - data[0]);
+                        for(let i=1; i<data.length; i++) {
+                            ctx.lineTo((i/50)*w, h - data[i]);
+                        }
+                        ctx.stroke();
+                        requestAnimationFrame(drawGraph);
+                    }
+                    drawGraph();
+                });
+
+                // Update Clock
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('clock').innerText = now.toISOString().split('T')[1].split('.')[0] + " UTC";
+                }, 1000);
+            }
+        };
+
+        // ==========================================
+        // 3D ENGINE (No Libraries)
+        // ==========================================
+        class GeoEngine {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.width = canvas.width;
+                this.height = canvas.height;
+                this.points = [];
+                this.rotation = 0;
+                
+                this.initGlobe();
+                this.animate();
+            }
+
+            initGlobe() {
+                // Generate sphere points
+                for (let i = 0; i < 600; i++) {
+                    const phi = Math.acos(-1 + (2 * i) / 600);
+                    const theta = Math.sqrt(600 * Math.PI) * phi;
+                    
+                    this.points.push({
+                        x: 150 * Math.cos(theta) * Math.sin(phi),
+                        y: 150 * Math.sin(theta) * Math.sin(phi),
+                        z: 150 * Math.cos(phi)
+                    });
+                }
+            }
+
+            project(x, y, z) {
+                // Simple perspective projection
+                const scale = 400 / (400 + z);
+                return {
+                    x: x * scale + this.width / 2,
+                    y: y * scale + this.height / 2,
+                    scale: scale
+                };
+            }
+
+            animate() {
+                this.ctx.fillStyle = 'rgba(0, 20, 0, 0.3)';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                this.rotation += 0.005;
+
+                this.points.forEach(p => {
+                    // Rotate Y axis
+                    const rx = p.x * Math.cos(this.rotation) - p.z * Math.sin(this.rotation);
+                    const rz = p.z * Math.cos(this.rotation) + p.x * Math.sin(this.rotation);
+                    
+                    const proj = this.project(rx, p.y, rz);
+                    
+                    // Draw Point
+                    const alpha = (rz + 150) / 300; // Fade back points
+                    if (alpha > 0) {
+                        this.ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+                        this.ctx.fillRect(proj.x, proj.y, 2 * proj.scale, 2 * proj.scale);
+                    }
+
+                    // Draw connections (randomly to simulate network)
+                    if (Math.random() > 0.995) {
+                        this.ctx.strokeStyle = `rgba(0, 255, 0, ${alpha * 0.5})`;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(proj.x, proj.y);
+                        this.ctx.lineTo(this.width/2, this.height/2); // Connect to core
+                        this.ctx.stroke();
+                    }
+                });
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // Start System
+        window.onload = () => System.boot();
+
+    </script>
+</body>
+</html>
