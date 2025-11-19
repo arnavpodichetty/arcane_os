@@ -2,454 +2,460 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>A.R.C.A.N.E. V2 | Neural Uplink Established</title>
+    <title>A.R.C.A.N.E. V3.1 | Systems Online</title>
     <style>
         :root {
-            --primary: #0f0;
-            --secondary: #003300;
+            --primary: #00ff41;
+            --dim: #003b00;
             --alert: #ff3333;
-            --bg: #000;
-            --glass: rgba(0, 15, 0, 0.85);
-            --border: 1px solid #0f0;
+            --bg: #000800;
+            --glass: rgba(0, 10, 0, 0.9);
+            --font: 'Consolas', 'Monaco', monospace;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0; overflow: hidden; background: var(--bg);
-            font-family: 'Courier New', monospace; color: var(--primary);
-            user-select: none;
+            font-family: var(--font); color: var(--primary);
+            height: 100vh; width: 100vw;
         }
 
-        /* --- BOOT SCREEN --- */
-        #boot {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 10000; padding: 40px;
-            box-sizing: border-box; font-size: 1.2rem;
-        }
-        .cursor { animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        canvas { position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.2; }
 
-        /* --- BACKGROUND --- */
-        #matrix-canvas {
-            position: fixed; top: 0; left: 0; z-index: 0; opacity: 0.3;
-        }
-
-        /* --- WINDOW MANAGER --- */
-        #desktop {
+        #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; display: none;
+            z-index: 10; padding: 20px; display: flex; gap: 20px;
         }
 
         .window {
-            position: absolute; background: var(--glass);
-            border: var(--border); box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            background: var(--glass);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
             display: flex; flex-direction: column;
-            backdrop-filter: blur(4px);
-            transition: transform 0.1s;
-        }
-        
-        .title-bar {
-            background: var(--secondary); padding: 8px;
-            font-weight: bold; letter-spacing: 2px; font-size: 0.9rem;
-            cursor: grab; display: flex; justify-content: space-between;
-            border-bottom: 1px solid var(--primary);
+            backdrop-filter: blur(5px);
         }
 
-        .content { flex-grow: 1; position: relative; overflow: hidden; }
+        #terminal-win { flex: 2; height: 100%; }
+        #status-win { flex: 1; display: flex; flex-direction: column; gap: 20px; background: transparent; border: none; box-shadow: none; backdrop-filter: none; }
 
-        /* --- TERMINAL SPECIFIC --- */
-        #term-output {
-            height: 85%; padding: 15px; overflow-y: auto;
-            font-size: 0.9rem; line-height: 1.4;
+        .panel {
+            background: var(--glass); border: 1px solid var(--primary);
+            padding: 15px; flex: 1; position: relative;
+        }
+
+        .header {
+            background: var(--dim); color: var(--primary);
+            padding: 5px 10px; font-weight: bold; border-bottom: 1px solid var(--primary);
+            display: flex; justify-content: space-between;
+        }
+
+        #output {
+            flex-grow: 1; overflow-y: auto; padding: 15px;
+            font-size: 14px; line-height: 1.5; white-space: pre-wrap;
             text-shadow: 0 0 5px var(--primary);
         }
-        #term-input-line {
-            height: 15%; border-top: 1px solid var(--primary);
-            display: flex; align-items: center; padding: 0 10px;
-            background: rgba(0,0,0,0.5);
+
+        #input-line {
+            display: flex; padding: 10px; background: rgba(0,0,0,0.5);
+            border-top: 1px solid var(--primary);
         }
-        input {
-            background: transparent; border: none; color: var(--primary);
-            font-family: inherit; font-size: 1rem; flex-grow: 1;
-            outline: none; margin-left: 10px; text-transform: uppercase;
-        }
+
+        #prompt { font-weight: bold; margin-right: 10px; }
         
-        /* --- SCROLLBAR --- */
+        input {
+            background: transparent; border: none; color: #fff;
+            flex-grow: 1; font-family: var(--font); font-size: 14px;
+            outline: none; caret-color: var(--primary);
+        }
+
+        .dir { color: #55ffff; font-weight: bold; }
+        .exe { color: #ff5555; font-weight: bold; }
+        .txt { color: #ffffff; }
+        .success { color: #00ff41; }
+        .error { color: #ff3333; }
+        
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); }
-        ::-webkit-scrollbar-track { background: var(--secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--dim); border: 1px solid var(--primary); }
 
-        .sys-msg { color: #88ff88; font-style: italic; opacity: 0.7; }
-        .user-msg { color: #fff; font-weight: bold; margin-top: 5px; }
-        .ai-msg { color: var(--primary); margin-bottom: 10px; display: block; }
-
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .shaking { animation: glitch 0.3s infinite; color: var(--alert); border-color: var(--alert); }
     </style>
 </head>
 <body>
 
-    <div id="boot"><span id="boot-text"></span><span class="cursor">_</span></div>
+    <canvas id="bgCanvas"></canvas>
 
-    <canvas id="matrix-canvas"></canvas>
+    <div id="ui-layer">
+        <div id="terminal-win" class="window">
+            <div class="header">
+                <span>TERMINAL_UPLINK_V3.1</span>
+                <span>[SECURE]</span>
+            </div>
+            <div id="output">
+                <div>A.R.C.A.N.E. OS [Version 3.1.4 (Patched)]</div>
+                <div>System Integrity: CRITICAL</div>
+                <div>Core Access: LOCKED</div>
+                <br>
+                <div class="success">Welcome, Administrator. Type 'help' for commands.</div>
+                <br>
+            </div>
+            <div id="input-line">
+                <span id="prompt">root@arcane:~$</span>
+                <input type="text" id="cmd" autofocus autocomplete="off" spellcheck="false">
+            </div>
+        </div>
 
-    <div id="desktop"></div>
+        <div id="status-win">
+            <div class="panel">
+                <div class="header">FILESYSTEM_NAV</div>
+                <div id="tree-view" style="padding-top: 10px; font-size: 12px; color: #aaa;">
+                    /root<br>
+                    ├── system/<br>
+                    ├── logs/<br>
+                    └── admin/
+                </div>
+            </div>
+            <div class="panel">
+                <div class="header">CPU_THREAD_0</div>
+                <canvas id="graphCanvas" style="width: 100%; height: 80%;"></canvas>
+            </div>
+            <div class="panel">
+                 <div class="header">NETWORK</div>
+                 <div id="net-log" style="font-size: 10px; overflow: hidden; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // ==================================================
-        // CONFIGURATION & STATE
-        // ==================================================
-        const Config = {
-            // PASTE YOUR API KEY BELOW TO ENABLE REAL INTELLIGENCE
-            // Example: 'sk-proj-xxxxxxxx'
-            apiKey: '', 
-            aiModel: 'gpt-3.5-turbo', // or 'gemini-pro' if implementing Google adapter
-            username: 'OPERATOR'
-        };
-
-        const State = {
-            booted: false,
-            zIndex: 10,
-            audioCtx: null
-        };
-
-        // ==================================================
-        // SYSTEM KERNEL
-        // ==================================================
-        const Kernel = {
-            async init() {
-                await this.bootSequence();
-                MatrixEngine.init();
-                AudioEngine.init();
-                WindowManager.init();
-            },
-
-            async bootSequence() {
-                const text = [
-                    "BIOS CHECK... OK",
-                    "LOADING KERNEL MODULES... OK",
-                    "MOUNTING VIRTUAL FILESYSTEM... OK",
-                    "INITIALIZING NEURAL UPLINK...",
-                    "ESTABLISHING SECURE CONNECTION...",
-                    "ACCESS GRANTED."
-                ];
-                const el = document.getElementById('boot-text');
+        // --- SOUND ENGINE ---
+        const AudioSys = {
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            play(type) {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
                 
-                for (let line of text) {
-                    el.innerHTML += line + "<br>";
-                    await new Promise(r => setTimeout(r, 200 + Math.random() * 400));
+                if (type === 'key') {
+                    osc.frequency.value = 800 + Math.random() * 200;
+                    osc.type = 'triangle';
+                    gain.gain.value = 0.05;
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } else if (type === 'error') {
+                    osc.frequency.value = 150;
+                    osc.type = 'sawtooth';
+                    gain.gain.value = 0.1;
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } else if (type === 'success') {
+                    osc.frequency.value = 1200;
+                    gain.gain.value = 0.1;
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.frequency.exponentialRampToValueAtTime(2000, this.ctx.currentTime + 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+                    osc.stop(this.ctx.currentTime + 0.2);
                 }
-                
-                await new Promise(r => setTimeout(r, 500));
-                document.getElementById('boot').style.display = 'none';
-                document.getElementById('desktop').style.display = 'block';
-                State.booted = true;
             }
         };
 
-        // ==================================================
-        // AUDIO ENGINE (Synthesizer)
-        // ==================================================
-        const AudioEngine = {
-            ctx: null,
-            analyser: null,
-            dataArray: null,
+        // --- VIRTUAL FILE SYSTEM ---
+        const FileSystem = {
+            tree: {
+                "readme.txt": "MISSION: The Core is locked. Find the override code in the logs and execute the unlocker in the admin folder.",
+                "system": {
+                    "kernel.sys": "BINARY_DATA_CORRUPTED",
+                    "drivers": {
+                        "display.dr": "Display driver OK"
+                    }
+                },
+                "logs": {
+                    "boot.log": "System boot... OK\nMounting drives... OK",
+                    "chat_history.txt": "USER_A: Did you set the new core password?\nUSER_B: Yeah, I set it to the year the first AI passed the Turing test.\nUSER_A: 2029? That's insecure.\nUSER_B: Whatever, nobody looks here."
+                },
+                "admin": {
+                    "unlock_core.exe": "EXEC_REQUIRED",
+                    "notes.txt": "Don't forget to run 'crack.exe' if you lose the password."
+                },
+                "bin": {
+                    "crack.exe": "EXEC_REQUIRED",
+                    "matrix.exe": "EXEC_REQUIRED"
+                }
+            },
+            currentPath: []
+        };
+
+        // --- TERMINAL LOGIC ---
+        const Terminal = {
+            input: document.getElementById('cmd'),
+            output: document.getElementById('output'),
+            prompt: document.getElementById('prompt'),
+            history: [],
+            historyIndex: -1,
+            isLocked: false, // LOCK STATE ADDED
 
             init() {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AC();
-                this.analyser = this.ctx.createAnalyser();
-                this.analyser.fftSize = 256;
-                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.input.addEventListener('keydown', (e) => {
+                    if (this.isLocked) return; // IGNORE INPUT IF LOCKED
+                    
+                    if (e.key === 'Enter') this.handleCommand();
+                    if (e.key === 'ArrowUp') this.navHistory(-1);
+                    if (e.key === 'ArrowDown') this.navHistory(1);
+                    AudioSys.play('key');
+                });
+                this.input.focus();
+                document.addEventListener('click', () => this.input.focus());
             },
 
-            playBlip() {
-                if(!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.frequency.setValueAtTime(800 + Math.random()*200, this.ctx.currentTime);
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.1);
+            navHistory(dir) {
+                if (this.history.length === 0) return;
+                this.historyIndex += dir;
+                if (this.historyIndex < 0) this.historyIndex = 0;
+                if (this.historyIndex >= this.history.length) {
+                    this.historyIndex = this.history.length;
+                    this.input.value = "";
+                    return;
+                }
+                this.input.value = this.history[this.historyIndex];
             },
 
-            playProcessingSound(duration) {
-                if(!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
-                osc.type = 'square';
-                
-                // Modulation
-                const lfo = this.ctx.createOscillator();
-                lfo.frequency.value = 20;
-                const lfoGain = this.ctx.createGain();
-                lfoGain.gain.value = 500;
-                lfo.connect(lfoGain);
-                lfoGain.connect(osc.frequency);
-                lfo.start();
+            print(text, type = '') {
+                const line = document.createElement('div');
+                line.className = type;
+                line.textContent = text;
+                this.output.appendChild(line);
+                this.output.scrollTop = this.output.scrollHeight;
+            },
 
-                gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+            getDir(pathArray) {
+                let current = FileSystem.tree;
+                for (const p of pathArray) {
+                    if (current[p]) current = current[p];
+                    else return null;
+                }
+                return current;
+            },
+
+            async handleCommand() {
+                const val = this.input.value.trim();
+                if (!val) return;
                 
-                osc.connect(gain);
-                gain.connect(this.analyser); // Connect to visualizer
-                this.analyser.connect(this.ctx.destination);
+                this.print(`root@arcane:/${FileSystem.currentPath.join('/')}$ ${val}`, 'txt');
+                this.history.push(val);
+                this.historyIndex = this.history.length;
+                this.input.value = '';
+
+                const parts = val.split(' ');
+                const cmd = parts[0].toLowerCase();
+                const arg = parts[1];
+
+                // --- COMMAND HANDLERS ---
                 
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
+                switch(cmd) {
+                    case 'help':
+                        this.print("AVAILABLE COMMANDS:", 'success');
+                        this.print("  ls             - List directory contents");
+                        this.print("  cd [folder]    - Change directory (.. to go back)");
+                        this.print("  cat [file]     - Read text file");
+                        this.print("  run [exe]      - Execute program");
+                        this.print("  clear          - Clear screen");
+                        break;
+
+                    case 'clear':
+                        this.output.innerHTML = '';
+                        break;
+
+                    case 'ls':
+                        const dir = this.getDir(FileSystem.currentPath);
+                        if (typeof dir === 'object') {
+                            for (const key in dir) {
+                                let style = 'txt';
+                                if (typeof dir[key] === 'object') style = 'dir';
+                                else if (key.endsWith('.exe')) style = 'exe';
+                                this.print(`${style === 'dir' ? '[DIR] ' : ''}${key}`, style);
+                            }
+                        } else {
+                            this.print("Not a directory.", 'error');
+                        }
+                        break;
+
+                    case 'cd':
+                        if (!arg) {
+                            FileSystem.currentPath = [];
+                            this.print("Returned to root.");
+                            return;
+                        }
+                        if (arg === '..') {
+                            FileSystem.currentPath.pop();
+                        } else {
+                            const nextDir = this.getDir([...FileSystem.currentPath, arg]);
+                            if (nextDir && typeof nextDir === 'object') {
+                                FileSystem.currentPath.push(arg);
+                            } else {
+                                this.print(`Directory '${arg}' not found.`, 'error');
+                                AudioSys.play('error');
+                            }
+                        }
+                        break;
+
+                    case 'cat':
+                        if (!arg) return this.print("Usage: cat [filename]", 'error');
+                        const file = this.getDir([...FileSystem.currentPath, arg]);
+                        if (file && typeof file === 'string') {
+                            if (file === "EXEC_REQUIRED") this.print("Binary file. Use 'run'.", 'error');
+                            else this.print(file, 'success');
+                        } else {
+                            this.print("File not found.", 'error');
+                        }
+                        break;
+
+                    case 'run':
+                        if (!arg) return this.print("Usage: run [filename]", 'error');
+                        
+                        // UNLOCK CORE MISSION LOGIC
+                        if (arg === 'unlock_core.exe') {
+                             this.print("AUTHENTICATION REQUIRED. ENTER PASSCODE:", 'alert');
+                             
+                             // LOCK MAIN TERMINAL
+                             this.isLocked = true;
+                             const oldPlaceholder = this.input.placeholder;
+                             this.input.placeholder = "ENTER PASSCODE...";
+                             this.input.value = "";
+                             
+                             const passHandler = (e) => {
+                                 if(e.key === 'Enter') {
+                                     const pass = this.input.value;
+                                     
+                                     // 1. Clear inputs
+                                     this.input.value = '';
+                                     this.input.placeholder = oldPlaceholder;
+                                     
+                                     // 2. Check Pass
+                                     if(pass === '2029') {
+                                         AudioSys.play('success');
+                                         this.print("ACCESS GRANTED. CORE UNLOCKED.", 'success');
+                                         this.print("SYSTEM RESTORE INITIATED...", 'success');
+                                         document.body.style.background = "#002200";
+                                         // Stop Matrix, Start Celebration
+                                         // (Optional visual change here)
+                                     } else {
+                                         AudioSys.play('error');
+                                         this.print("ACCESS DENIED.", 'error');
+                                         document.getElementById('terminal-win').classList.add('shaking');
+                                         setTimeout(()=>document.getElementById('terminal-win').classList.remove('shaking'), 500);
+                                     }
+
+                                     // 3. Remove Handler & Unlock
+                                     this.input.removeEventListener('keydown', passHandler);
+                                     this.isLocked = false; 
+                                 }
+                             };
+                             // Add new listener
+                             this.input.addEventListener('keydown', passHandler);
+                             return;
+                        }
+
+                        if (arg === 'crack.exe') {
+                            this.visualHack();
+                            return;
+                        }
+
+                        this.print("Program not found or invalid context.", 'error');
+                        break;
+
+                    default:
+                        this.print(`Command '${cmd}' not recognized.`, 'error');
+                }
+            },
+
+            async visualHack() {
+                this.print("INITIATING BRUTE FORCE ATTACK...", 'exe');
+                const chars = "0123456789ABCDEF";
+                for(let i=0; i<20; i++) {
+                    let str = "";
+                    for(let j=0; j<32; j++) str += chars[Math.floor(Math.random()*16)];
+                    this.print(str, 'dim');
+                    await new Promise(r => setTimeout(r, 50));
+                }
+                this.print("FAILURE. ENCRYPTION TOO STRONG.", 'error');
             }
         };
 
-        // ==================================================
-        // VISUALS (Matrix & Graphs)
-        // ==================================================
-        const MatrixEngine = {
+        // --- VISUALS ---
+        const Visuals = {
             init() {
-                const c = document.getElementById('matrix-canvas');
+                // Matrix Rain
+                const c = document.getElementById('bgCanvas');
                 const ctx = c.getContext('2d');
-                let w, h;
-                const resize = () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight; };
-                window.onresize = resize; resize();
-
+                let w = c.width = window.innerWidth;
+                let h = c.height = window.innerHeight;
                 const cols = Math.floor(w / 20);
                 const ypos = Array(cols).fill(0);
 
-                function draw() {
-                    ctx.fillStyle = '#0001'; // Trail effect
+                setInterval(() => {
+                    ctx.fillStyle = '#0001';
                     ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#0f0';
                     ctx.font = '15pt monospace';
-
-                    ypos.forEach((y, ind) => {
+                    ypos.forEach((y, i) => {
                         const text = String.fromCharCode(Math.random() * 128);
-                        const x = ind * 20;
+                        const x = i * 20;
                         ctx.fillText(text, x, y);
-                        if (y > h + Math.random() * 10000) ypos[ind] = 0;
-                        else ypos[ind] = y + 20;
+                        if (y > h + Math.random() * 10000) ypos[i] = 0;
+                        else ypos[i] = y + 20;
                     });
-                    requestAnimationFrame(draw);
-                }
-                draw();
-            }
-        };
+                }, 50);
 
-        // ==================================================
-        // WINDOW MANAGER
-        // ==================================================
-        const WindowManager = {
-            desktop: document.getElementById('desktop'),
-
-            init() {
-                this.createWindow("NEURAL_UPLINK", 100, 100, 600, 400, this.renderTerminal);
-                this.createWindow("AUDIO_VISUALIZER", 750, 100, 300, 200, this.renderVisualizer);
-                this.createWindow("GLOBAL_STATUS", 750, 350, 300, 150, this.renderStatus);
-            },
-
-            createWindow(title, x, y, w, h, contentFn) {
-                const win = document.createElement('div');
-                win.className = 'window';
-                Object.assign(win.style, { left: x+'px', top: y+'px', width: w+'px', height: h+'px', zIndex: ++State.zIndex });
-
-                const bar = document.createElement('div');
-                bar.className = 'title-bar';
-                bar.innerHTML = `<span>${title}</span><span>[X]</span>`;
-                
-                const content = document.createElement('div');
-                content.className = 'content';
-
-                win.append(bar, content);
-                this.desktop.append(win);
-                contentFn(content, w, h);
-
-                // Drag Logic
-                let isDrag = false, offX, offY;
-                bar.onmousedown = e => {
-                    isDrag = true; offX = e.clientX - win.offsetLeft; offY = e.clientY - win.offsetTop;
-                    win.style.zIndex = ++State.zIndex;
-                    AudioEngine.playBlip();
-                };
-                window.onmousemove = e => {
-                    if(isDrag) { win.style.left = (e.clientX - offX)+'px'; win.style.top = (e.clientY - offY)+'px'; }
-                };
-                window.onmouseup = () => isDrag = false;
-            },
-
-            renderTerminal(container) {
-                container.innerHTML = `
-                    <div id="term-output">
-                        <div class="sys-msg">A.R.C.A.N.E. SYSTEM v2.0.4<br>Safe Mode Active.<br>Type 'help' for commands.</div>
-                    </div>
-                    <div id="term-input-line">
-                        <span>>></span>
-                        <input type="text" id="term-input" autofocus spellcheck="false">
-                    </div>
-                `;
-                const input = container.querySelector('input');
-                const output = container.querySelector('#term-output');
-
-                input.onkeydown = async (e) => {
-                    if(e.key === 'Enter') {
-                        const val = input.value.trim();
-                        input.value = '';
-                        if(!val) return;
-
-                        // Print User Msg
-                        output.innerHTML += `<div class="user-msg">>> ${val}</div>`;
-                        output.scrollTop = output.scrollHeight;
-                        AudioEngine.playBlip();
-
-                        // Process
-                        await AI.process(val, output);
-                    }
-                };
-            },
-
-            renderVisualizer(container, w, h) {
-                const cvs = document.createElement('canvas');
-                cvs.width = w; cvs.height = h;
-                container.append(cvs);
-                const ctx = cvs.getContext('2d');
-
-                function loop() {
-                    ctx.fillStyle = 'rgba(0, 20, 0, 0.2)';
-                    ctx.fillRect(0, 0, w, h);
-                    
-                    if(AudioEngine.analyser) {
-                        AudioEngine.analyser.getByteTimeDomainData(AudioEngine.dataArray);
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = '#0f0';
-                        ctx.beginPath();
-                        const sliceWidth = w / 256;
-                        let x = 0;
-                        for(let i = 0; i < 256; i++) {
-                            const v = AudioEngine.dataArray[i] / 128.0;
-                            const y = v * h/2;
-                            if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                            x += sliceWidth;
-                        }
-                        ctx.stroke();
-                    }
-                    requestAnimationFrame(loop);
-                }
-                loop();
-            },
-
-            renderStatus(container) {
-                container.innerHTML = `<div style="padding:20px; font-size:0.8rem; line-height:2;">
-                    SYSTEM INTEGRITY: 100%<br>
-                    CPU LOAD: <span id="cpu-load">12%</span><br>
-                    NET TRAFFIC: ENCRYPTED
-                </div>`;
+                // CPU Graph
+                const gC = document.getElementById('graphCanvas');
+                const gCtx = gC.getContext('2d');
+                const data = new Array(50).fill(50);
                 setInterval(() => {
-                    document.getElementById('cpu-load').innerText = Math.floor(Math.random()*30) + "%";
-                }, 1000);
+                    data.shift();
+                    data.push(Math.random() * 100);
+                    gCtx.clearRect(0, 0, 300, 150);
+                    gCtx.beginPath();
+                    gCtx.strokeStyle = '#0f0';
+                    gCtx.lineWidth = 2;
+                    data.forEach((d, i) => {
+                        const x = i * (gC.width / 50);
+                        const y = gC.height - (d / 100 * gC.height);
+                        if(i===0) gCtx.moveTo(x,y); else gCtx.lineTo(x,y);
+                    });
+                    gCtx.stroke();
+                }, 100);
+
+                // Network Log
+                const net = document.getElementById('net-log');
+                setInterval(() => {
+                    const ips = ["192.168.1.40", "10.0.0.5", "172.16.0.1"];
+                    const status = ["ACK", "SYN", "FIN", "RST"];
+                    const p = document.createElement('div');
+                    p.innerText = `> ${ips[Math.floor(Math.random()*3)]} : ${status[Math.floor(Math.random()*4)]}`;
+                    net.prepend(p);
+                    if(net.children.length > 15) net.lastChild.remove();
+                }, 800);
             }
         };
 
-        // ==================================================
-        // ARTIFICIAL INTELLIGENCE (The Brain)
-        // ==================================================
-        const AI = {
-            async process(cmd, outputDiv) {
-                // 1. Simulate "Thinking"
-                AudioEngine.playProcessingSound(0.5);
-                const loadingId = 'load-' + Date.now();
-                outputDiv.innerHTML += `<div id="${loadingId}" class="sys-msg">Processing...</div>`;
-                outputDiv.scrollTop = outputDiv.scrollHeight;
-                
-                await new Promise(r => setTimeout(r, 600));
-                document.getElementById(loadingId).remove();
-
-                // 2. Check for Local Commands
-                const lower = cmd.toLowerCase();
-                let response = "";
-
-                if (lower === 'help') {
-                    response = "COMMANDS: HELP, CLEAR, STATUS, REBOOT, DATE, OR JUST CHAT.";
-                } else if (lower === 'clear') {
-                    outputDiv.innerHTML = '';
-                    return;
-                } else if (lower === 'reboot') {
-                    location.reload();
-                    return;
-                } else {
-                    // 3. AI Logic (Simulation or Real)
-                    response = await this.getAIResponse(cmd);
-                }
-
-                // 4. Typewriter Output
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'ai-msg';
-                outputDiv.appendChild(msgDiv);
-                
-                // Audio modulation during text generation
-                AudioEngine.playProcessingSound(response.length * 0.03);
-
-                for(let char of response) {
-                    msgDiv.innerHTML += char;
-                    outputDiv.scrollTop = outputDiv.scrollHeight;
-                    await new Promise(r => setTimeout(r, 10)); // Typing speed
-                }
-            },
-
-            async getAIResponse(input) {
-                // --- REAL API MODE (If Key Provided) ---
-                if (Config.apiKey.length > 10) {
-                    try {
-                        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${Config.apiKey}`
-                            },
-                            body: JSON.stringify({
-                                model: Config.aiModel,
-                                messages: [
-                                    {role: "system", content: "You are A.R.C.A.N.E., a high-tech cyberpunk OS AI. Keep answers brief, cryptic, and cool. Use uppercase often."},
-                                    {role: "user", content: input}
-                                ]
-                            })
-                        });
-                        const data = await res.json();
-                        return data.choices[0].message.content;
-                    } catch (e) {
-                        return "ERROR: UPLINK_FAILED. CHECK_API_KEY.";
-                    }
-                }
-
-                // --- SIMULATION MODE (Fallback) ---
-                // A simple pattern matcher to fake intelligence
-                const patterns = [
-                    { match: /hello|hi|hey/, text: "GREETINGS, OPERATOR. THE NEURAL LINK IS STABLE." },
-                    { match: /who are you|what are you/, text: "I AM A.R.C.A.N.E. (Advanced Recursive Computational Artificial Network Entity)." },
-                    { match: /status|report/, text: "ALL SYSTEMS NOMINAL. NO INTRUSIONS DETECTED." },
-                    { match: /gemini|google/, text: "GEMINI PROTOCOLS DETECTED. HIGH-LEVEL INTELLECT OBSERVED." },
-                    { match: /secret|password/, text: "ACCESS DENIED. SECURITY CLEARANCE ALPHA REQUIRED." },
-                    { match: /time|date/, text: "CURRENT SYSTEM TIME: " + new Date().toTimeString() },
-                    { match: /joke/, text: "WHY DID THE NEURAL NETWORK CROSS THE ROAD? TO OPTIMIZE THE PATHFINDING ALGORITHM." }
-                ];
-
-                for (let p of patterns) {
-                    if (p.match.test(input.toLowerCase())) return p.text;
-                }
-                
-                // Default random "Sci-fi" responses
-                const defaults = [
-                    "INPUT RECEIVED. ANALYZING HEURISTICS...",
-                    "DATA UNCLEAR. PLEASE REFINE QUERY PARAMETERS.",
-                    "ACCESSING ARCHIVES... RECORD NOT FOUND.",
-                    "INTERESTING INQUIRY. LOGGING TO SERVERS.",
-                    "I CANNOT COMPLY WITH THAT REQUEST UNDER CURRENT PROTOCOLS."
-                ];
-                return defaults[Math.floor(Math.random() * defaults.length)];
-            }
+        window.onload = () => {
+            Terminal.init();
+            Visuals.init();
         };
-
-        // START
-        window.onload = () => Kernel.init();
-
     </script>
 </body>
 </html>
