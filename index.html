@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A.R.C.A.N.E. V7 | System Explorer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <svg style="display:none;">
+        <symbol id="icon-folder" viewBox="0 0 32 32"><path d="M2,6 L14,6 L16,8 L30,8 L30,26 L2,26 Z" fill="#ffeb3b" stroke="#b8860b"/></symbol>
+        <symbol id="icon-file" viewBox="0 0 32 32"><path d="M6,2 L20,2 L26,8 L26,30 L6,30 Z" fill="#fff" stroke="#000"/><path d="M20,2 L20,8 L26,8" fill="#eee" stroke="#000"/></symbol>
+        <symbol id="icon-computer" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="18" fill="#eee" stroke="#000"/><rect x="6" y="6" width="20" height="14" fill="#008080"/><rect x="8" y="24" width="16" height="4" fill="#eee" stroke="#000"/></symbol>
+        <symbol id="icon-trash" viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="22" fill="#fff" stroke="#000"/><line x1="10" y1="10" x2="10" y2="24" stroke="#000"/><line x1="16" y1="10" x2="16" y2="24" stroke="#000"/><line x1="22" y1="10" x2="22" y2="24" stroke="#000"/></symbol>
+        <symbol id="icon-mail" viewBox="0 0 32 32"><rect x="2" y="6" width="28" height="20" fill="#ffeb3b" stroke="#b8860b"/><path d="M2,6 L16,18 L30,6" fill="none" stroke="#b8860b"/></symbol>
+        <symbol id="icon-admin" viewBox="0 0 32 32"><path d="M16,2 L28,6 L28,16 C28,24 16,30 16,30 C16,30 4,24 4,16 L4,6 Z" fill="#d00" stroke="#000"/><path d="M16,10 L16,20 M11,15 L21,15" stroke="#fff" stroke-width="3"/></symbol>
+    </svg>
+
+    <canvas id="bgCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="terminal-win" class="term-window">
+            <div class="term-header">
+                <span>TERMINAL_UPLINK_V7</span>
+                <span>[LEVEL 1 ACCESS]</span>
+            </div>
+            <div id="output">
+                <div>A.R.C.A.N.E. OS [Version 7.0.1]</div>
+                <div class="error">System Integrity: COMPROMISED</div>
+                <br>
+                <div class="gold">Welcome, User.</div>
+                <div>Objective: Unlock the Core.</div>
+                <br>
+            </div>
+            <div id="input-line">
+                <span class="gold" style="margin-right:10px;">guest@arcane:~$</span>
+                <input type="text" class="term-input" id="cmd" autofocus autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+        <div id="status-win">
+            <div class="panel">
+                <div class="term-header">FILESYSTEM</div>
+                <div id="tree-view" style="padding-top:10px; font-size:12px; color:#aaa; white-space:pre;">/root...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="boot-layer">
+        <div>A.R.C.A.N.E. BIOS v7.0</div>
+        <div>Checking RAM... 640K OK</div>
+        <br>
+        <div id="boot-log"></div>
+    </div>
+
+    <div id="gui-layer">
+        <div id="desktop-icons">
+            <div class="d-icon" onclick="GUI.openApp('explorer', 'My Computer')">
+                <svg class="d-img"><use href="#icon-computer"/></svg><span>My Computer</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('mail')">
+                <svg class="d-img"><use href="#icon-mail"/></svg><span>Inbox</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('explorer', 'Recycle Bin', 'trash')">
+                <svg class="d-img"><use href="#icon-trash"/></svg><span>Recycle Bin</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('admin')">
+                <svg class="d-img"><use href="#icon-admin"/></svg><span>Admin Panel</span>
+            </div>
+        </div>
+        <div id="taskbar">
+            <div id="start-btn">Start</div>
+            <div style="margin-left: auto; padding-right: 10px; color:black; font-size:12px;" id="clock-tray">12:00 PM</div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script src="terminal.js"></script>
+    <script src="desktop.js"></script>
+</body>
+</html>
