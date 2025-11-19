@@ -9,13 +9,11 @@ const TermFS = {
         },
         "bin": {
             "system_liberate.exe": "BINARY",
-            "crack.exe": "BINARY",   // RESTORED
-            "matrix.exe": "BINARY"   // RESTORED
+            "crack.exe": "BINARY",
+            "matrix.exe": "BINARY"
         }
     },
     path: [],
-    
-    // Vault (Appears after unlock)
     vault: { "project.txt": "ID: 9901" }
 };
 
@@ -23,7 +21,6 @@ const Terminal = {
     input: document.getElementById('cmd'),
     output: document.getElementById('output'),
     accessLevel: 1,
-    
     state: 'COMMAND', 
     passwordCallback: null,
     targetPassword: null,
@@ -34,11 +31,9 @@ const Terminal = {
             if (e.key === 'Enter') this.handleEnter();
             AudioSys.play('key');
         });
-        
         document.addEventListener('click', () => {
             if (document.getElementById('ui-layer').style.display !== 'none') this.input.focus();
         });
-        
         this.updateTree();
     },
 
@@ -85,14 +80,13 @@ const Terminal = {
         this.input.placeholder = "ENTER PASSWORD...";
     },
 
-    // --- VISUAL HACK EFFECT (RESTORED) ---
     async visualHack() {
         this.print("INITIATING BRUTE FORCE...", 'exe');
         const chars = "0123456789ABCDEF";
         for(let i=0; i<15; i++) {
             let str = "";
             for(let j=0; j<32; j++) str += chars[Math.floor(Math.random()*16)];
-            this.print(str, 'dir'); // using 'dir' for blue color
+            this.print(str, 'dir');
             await new Promise(r => setTimeout(r, 50));
         }
         this.print("FAILURE. ENCRYPTION TOO STRONG.", 'error');
@@ -101,7 +95,19 @@ const Terminal = {
     exec(val) {
         const [cmd, arg] = val.split(' ');
         
-        if (cmd === 'ls') {
+        // --- HELP COMMAND RESTORED ---
+        if (cmd === 'help') {
+            this.print("AVAILABLE COMMANDS:", 'success');
+            this.print("  ls             - List directory contents");
+            this.print("  cd [folder]    - Change directory (.. to go back)");
+            this.print("  cat [file]     - Read text file");
+            this.print("  run [exe]      - Execute program");
+            this.print("  clear          - Clear screen");
+        }
+        else if (cmd === 'clear') {
+            this.output.innerHTML = '';
+        }
+        else if (cmd === 'ls') {
             let dir = TermFS.tree;
             for (let p of TermFS.path) dir = dir[p];
             for (let k in dir) {
@@ -137,17 +143,10 @@ const Terminal = {
                     setTimeout(BootSequence.start, 2000);
                 });
             }
-            // RESTORED RED HERRINGS
-            else if (arg === 'crack.exe') {
-                this.visualHack();
-            }
-            else if (arg === 'matrix.exe') {
-                this.print("The Matrix has you...", 'success');
-                this.visualHack();
-            }
+            else if (arg === 'crack.exe') { this.visualHack(); }
+            else if (arg === 'matrix.exe') { this.print("The Matrix has you...", 'success'); this.visualHack(); }
             else this.print("File not found", 'error');
         }
-        else if (cmd === 'help') this.print("ls, cd, cat, run", 'success');
         else this.print("Unknown command", 'error');
     }
 };

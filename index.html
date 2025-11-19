@@ -2,33 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>A.R.C.A.N.E. V7 | System Explorer</title>
+    <title>A.R.C.A.N.E. V9 | The Dark Web</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- SVG ASSETS -->
     <svg style="display:none;">
         <symbol id="icon-folder" viewBox="0 0 32 32"><path d="M2,6 L14,6 L16,8 L30,8 L30,26 L2,26 Z" fill="#ffeb3b" stroke="#b8860b"/></symbol>
         <symbol id="icon-file" viewBox="0 0 32 32"><path d="M6,2 L20,2 L26,8 L26,30 L6,30 Z" fill="#fff" stroke="#000"/><path d="M20,2 L20,8 L26,8" fill="#eee" stroke="#000"/></symbol>
+        <symbol id="icon-image" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="#fff" stroke="#000"/><circle cx="16" cy="16" r="6" fill="red"/></symbol>
         <symbol id="icon-computer" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="18" fill="#eee" stroke="#000"/><rect x="6" y="6" width="20" height="14" fill="#008080"/><rect x="8" y="24" width="16" height="4" fill="#eee" stroke="#000"/></symbol>
         <symbol id="icon-trash" viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="22" fill="#fff" stroke="#000"/><line x1="10" y1="10" x2="10" y2="24" stroke="#000"/><line x1="16" y1="10" x2="16" y2="24" stroke="#000"/><line x1="22" y1="10" x2="22" y2="24" stroke="#000"/></symbol>
         <symbol id="icon-mail" viewBox="0 0 32 32"><rect x="2" y="6" width="28" height="20" fill="#ffeb3b" stroke="#b8860b"/><path d="M2,6 L16,18 L30,6" fill="none" stroke="#b8860b"/></symbol>
         <symbol id="icon-admin" viewBox="0 0 32 32"><path d="M16,2 L28,6 L28,16 C28,24 16,30 16,30 C16,30 4,24 4,16 L4,6 Z" fill="#d00" stroke="#000"/><path d="M16,10 L16,20 M11,15 L21,15" stroke="#fff" stroke-width="3"/></symbol>
+        <symbol id="icon-network" viewBox="0 0 32 32"><rect x="2" y="12" width="8" height="8" fill="#000"/><rect x="22" y="12" width="8" height="8" fill="#000"/><path d="M10,16 L22,16" stroke="#000" stroke-width="2"/><circle cx="16" cy="16" r="4" fill="#0f0"/></symbol>
+        <symbol id="icon-warning" viewBox="0 0 32 32"><path d="M16,2 L30,28 L2,28 Z" fill="red" stroke="white"/><text x="16" y="24" font-size="16" text-anchor="middle" fill="white" font-weight="bold">!</text></symbol>
+        <symbol id="icon-globe" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="blue"/><path d="M2,16 L30,16 M16,2 L16,30" stroke="white" fill="none"/></symbol>
+        <symbol id="icon-shield" viewBox="0 0 32 32"><path d="M16,2 L28,6 L28,16 C28,24 16,30 16,30 C16,30 4,24 4,16 L4,6 Z" fill="#008000" stroke="#000"/><text x="16" y="22" fill="white" text-anchor="middle" font-size="14" font-weight="bold">KEY</text></symbol>
     </svg>
 
     <canvas id="bgCanvas"></canvas>
 
+    <!-- PHASE 1: TERMINAL -->
     <div id="ui-layer">
         <div id="terminal-win" class="term-window">
             <div class="term-header">
-                <span>TERMINAL_UPLINK_V7</span>
+                <span>TERMINAL_UPLINK_V9</span>
                 <span>[LEVEL 1 ACCESS]</span>
             </div>
             <div id="output">
-                <div>A.R.C.A.N.E. OS [Version 7.0.1]</div>
+                <div>A.R.C.A.N.E. OS [Version 9.0]</div>
                 <div class="error">System Integrity: COMPROMISED</div>
                 <br>
                 <div class="gold">Welcome, User.</div>
                 <div>Objective: Unlock the Core.</div>
+                <div style="opacity: 0.8; margin-top: 5px;">Type <span class="gold">'help'</span> for a list of commands.</div>
                 <br>
             </div>
             <div id="input-line">
@@ -44,13 +52,15 @@
         </div>
     </div>
 
+    <!-- TRANSITION: BOOT -->
     <div id="boot-layer">
-        <div>A.R.C.A.N.E. BIOS v7.0</div>
-        <div>Checking RAM... 640K OK</div>
+        <div>A.R.C.A.N.E. BIOS v9.0</div>
+        <div>Checking RAM... 2048K OK</div>
         <br>
         <div id="boot-log"></div>
     </div>
 
+    <!-- PHASE 2: DESKTOP -->
     <div id="gui-layer">
         <div id="desktop-icons">
             <div class="d-icon" onclick="GUI.openApp('explorer', 'My Computer')">
@@ -59,6 +69,12 @@
             <div class="d-icon" onclick="GUI.openApp('mail')">
                 <svg class="d-img"><use href="#icon-mail"/></svg><span>Inbox</span>
             </div>
+            <div class="d-icon" onclick="GUI.openApp('network')">
+                <svg class="d-img"><use href="#icon-network"/></svg><span>NetWizard</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('browser', 'http://localhost')">
+                <svg class="d-img"><use href="#icon-globe"/></svg><span>Browser</span>
+            </div>
             <div class="d-icon" onclick="GUI.openApp('explorer', 'Recycle Bin', 'trash')">
                 <svg class="d-img"><use href="#icon-trash"/></svg><span>Recycle Bin</span>
             </div>
@@ -66,12 +82,40 @@
                 <svg class="d-img"><use href="#icon-admin"/></svg><span>Admin Panel</span>
             </div>
         </div>
+
+        <!-- START MENU DROPDOWN -->
+        <div id="start-menu">
+            <div style="display:flex;">
+                <div class="start-sidebar">ARCANE</div>
+                <div style="flex-grow:1;">
+                    <div class="start-item" onclick="GUI.openApp('admin')">
+                        <svg><use href="#icon-admin"/></svg> Admin Control
+                    </div>
+                    <div class="start-item" onclick="GUI.openApp('explorer')">
+                        <svg><use href="#icon-computer"/></svg> Explorer
+                    </div>
+                    <div class="start-item" onclick="GUI.openApp('browser')">
+                        <svg><use href="#icon-globe"/></svg> Internet
+                    </div>
+                    <div class="start-line"></div>
+                    <!-- HIDDEN WIN BUTTON -->
+                    <div class="start-item purge-item" id="purge-btn" onclick="GUI.triggerPurge()">
+                        <svg><use href="#icon-warning"/></svg> SYSTEM PURGE
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="taskbar">
-            <div id="start-btn">Start</div>
+            <div id="start-btn" onclick="GUI.toggleStart()">
+                <svg style="width:16px;height:16px;fill:black;"><path d="M2,2 L14,2 L14,14 L2,14 Z"/></svg>
+                Start
+            </div>
             <div style="margin-left: auto; padding-right: 10px; color:black; font-size:12px;" id="clock-tray">12:00 PM</div>
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script src="main.js"></script>
     <script src="terminal.js"></script>
     <script src="desktop.js"></script>

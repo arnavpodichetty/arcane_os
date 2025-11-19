@@ -30,7 +30,7 @@ const AudioSys = {
     }
 };
 
-// BOOT SEQUENCER (Phase 1 -> Phase 2 Transition)
+// BOOT SEQUENCER
 const BootSequence = {
     start() {
         document.getElementById('ui-layer').style.display = 'none';
@@ -54,7 +54,43 @@ const BootSequence = {
     }
 };
 
+// MATRIX BACKGROUND EFFECT
+const Visuals = {
+    init() {
+        const c = document.getElementById('bgCanvas');
+        const ctx = c.getContext('2d');
+        let w = c.width = window.innerWidth;
+        let h = c.height = window.innerHeight;
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            w = c.width = window.innerWidth;
+            h = c.height = window.innerHeight;
+        });
+
+        const cols = Math.floor(w / 20);
+        const ypos = Array(cols).fill(0);
+
+        setInterval(() => {
+            ctx.fillStyle = '#0001'; // Fade effect
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#0f0'; // Text color
+            ctx.font = '15pt monospace';
+            
+            ypos.forEach((y, i) => {
+                const text = String.fromCharCode(Math.random() * 128);
+                const x = i * 20;
+                ctx.fillText(text, x, y);
+                
+                if (y > h + Math.random() * 10000) ypos[i] = 0;
+                else ypos[i] = y + 20;
+            });
+        }, 50);
+    }
+};
+
 // INITIALIZATION
 window.onload = () => {
+    Visuals.init();
     Terminal.init();
 };
