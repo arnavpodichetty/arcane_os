@@ -176,6 +176,29 @@ const GUI = {
         // Save raw content (including hidden comments) for View Source
         contentDiv.dataset.raw = page.content;
 
+        // Add event delegation for web-link clicks
+        // First, extract URLs from onclick attributes and store them in data attributes
+        const links = contentDiv.querySelectorAll('.web-link');
+        links.forEach(link => {
+            const onclickAttr = link.getAttribute('onclick');
+            if (onclickAttr) {
+                const match = onclickAttr.match(/GUI\.navBrowser\(['"]([^'"]+)['"]\)/);
+                if (match && match[1]) {
+                    link.dataset.url = match[1];
+                    link.removeAttribute('onclick');
+                }
+            }
+        });
+        
+        // Then set up event delegation
+        contentDiv.onclick = (e) => {
+            const link = e.target.closest('.web-link');
+            if (link && link.dataset.url) {
+                e.preventDefault();
+                this.navBrowser(link.dataset.url, winId);
+            }
+        };
+
         if(page.script) { try { eval(page.script); } catch(e) {} }
     },
 
