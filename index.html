@@ -19,6 +19,27 @@
         <symbol id="icon-warning" viewBox="0 0 32 32"><path d="M16,2 L30,28 L2,28 Z" fill="red" stroke="white"/><text x="16" y="24" font-size="16" text-anchor="middle" fill="white" font-weight="bold">!</text></symbol>
         <symbol id="icon-globe" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="blue"/><path d="M2,16 L30,16 M16,2 L16,30" stroke="white" fill="none"/></symbol>
         <symbol id="icon-shield" viewBox="0 0 32 32"><path d="M16,2 L28,6 L28,16 C28,24 16,30 16,30 C16,30 4,24 4,16 L4,6 Z" fill="#008000" stroke="#000"/><text x="16" y="22" fill="white" text-anchor="middle" font-size="14" font-weight="bold">KEY</text></symbol>
+        <symbol id="icon-notes" viewBox="0 0 32 32">
+            <rect x="6" y="4" width="20" height="24" fill="#fff3c4" stroke="#000"/>
+            <line x1="9" y1="10" x2="23" y2="10" stroke="#c77b00" stroke-width="1.5"/>
+            <line x1="9" y1="15" x2="23" y2="15" stroke="#c77b00" stroke-width="1.5"/>
+            <line x1="9" y1="20" x2="19" y2="20" stroke="#c77b00" stroke-width="1.5"/>
+            <rect x="6" y="4" width="20" height="4" fill="#ffe082" stroke="#000"/>
+        </symbol>
+        <symbol id="icon-registry" viewBox="0 0 32 32">
+            <rect x="4" y="6" width="24" height="20" fill="#cfd8dc" stroke="#000"/>
+            <rect x="6" y="8" width="8" height="16" fill="#90caf9" stroke="#1e88e5"/>
+            <rect x="18" y="8" width="8" height="16" fill="#ffe082" stroke="#f9a825"/>
+            <path d="M10,12 L14,12 M10,16 L14,16 M22,12 L26,12 M22,16 L26,16" stroke="#000" stroke-width="1"/>
+        </symbol>
+        <symbol id="icon-chat" viewBox="0 0 32 32">
+            <rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#fff" stroke="#000"/>
+            <rect x="7" y="9" width="18" height="8" fill="#e3f2fd" stroke="#64b5f6"/>
+            <circle cx="12" cy="13" r="1.5" fill="#1976d2"/>
+            <circle cx="16" cy="13" r="1.5" fill="#1976d2"/>
+            <circle cx="20" cy="13" r="1.5" fill="#1976d2"/>
+            <path d="M12,24 L12,20 L8,20 Z" fill="#fff" stroke="#000"/>
+        </symbol>
     </svg>
 
     <canvas id="bgCanvas"></canvas>
@@ -75,6 +96,15 @@
             <div class="d-icon" onclick="GUI.openApp('browser', 'http://localhost')">
                 <svg class="d-img"><use href="#icon-globe"/></svg><span>Browser</span>
             </div>
+            <div class="d-icon" onclick="GUI.openApp('notes')">
+                <svg class="d-img"><use href="#icon-notes"/></svg><span>Notes</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('registry')">
+                <svg class="d-img"><use href="#icon-registry"/></svg><span>Registry</span>
+            </div>
+            <div class="d-icon" onclick="GUI.openApp('messenger')">
+                <svg class="d-img"><use href="#icon-chat"/></svg><span>Messenger</span>
+            </div>
             <div class="d-icon" onclick="GUI.openApp('explorer', 'Recycle Bin', 'trash')">
                 <svg class="d-img"><use href="#icon-trash"/></svg><span>Recycle Bin</span>
             </div>
@@ -96,6 +126,15 @@
                     </div>
                     <div class="start-item" onclick="GUI.openApp('browser')">
                         <svg><use href="#icon-globe"/></svg> Internet
+                    </div>
+                    <div class="start-item" onclick="GUI.openApp('notes')">
+                        <svg><use href="#icon-notes"/></svg> Notes
+                    </div>
+                    <div class="start-item" onclick="GUI.openApp('registry')">
+                        <svg><use href="#icon-registry"/></svg> Registry Editor
+                    </div>
+                    <div class="start-item" onclick="GUI.openApp('messenger')">
+                        <svg><use href="#icon-chat"/></svg> Messenger
                     </div>
                     <div class="start-line"></div>
                     <!-- HIDDEN WIN BUTTON -->
